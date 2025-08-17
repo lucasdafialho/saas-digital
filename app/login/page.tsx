@@ -27,10 +27,14 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
+    console.log("[v0] Tentativa de login com:", email, password)
+
     try {
       await login(email, password)
+      console.log("[v0] Login bem-sucedido, redirecionando...")
       router.push("/dashboard")
     } catch (err) {
+      console.log("[v0] Erro no login:", err)
       setError("Email ou senha inválidos")
     } finally {
       setIsLoading(false)
@@ -112,7 +116,11 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full h-11 bg-accent hover:bg-accent/90" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
+                disabled={isLoading}
+              >
                 {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>

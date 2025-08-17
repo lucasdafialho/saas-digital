@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string) => {
+    console.log("[v0] Função login chamada com:", email, password)
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -55,8 +56,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       localStorage.setItem("marketpro_user", JSON.stringify(userData))
       setUser(userData)
+      console.log("[v0] Login demo realizado com sucesso")
+    } else if (email === "zshotbr@gmail.com" && password === "admin123") {
+      const userData: User = {
+        id: "2",
+        name: "Admin User",
+        email: email,
+        plan: "pro",
+        createdAt: new Date().toISOString(),
+      }
+
+      localStorage.setItem("marketpro_user", JSON.stringify(userData))
+      setUser(userData)
+      console.log("[v0] Login admin realizado com sucesso")
     } else {
-      throw new Error("Invalid credentials")
+      console.log("[v0] Credenciais inválidas:", email, password)
+      throw new Error("Credenciais inválidas")
     }
   }
 

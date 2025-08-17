@@ -215,7 +215,11 @@ export default function RegisterPage() {
                 </Label>
               </div>
 
-              <Button type="submit" className="w-full h-11 bg-accent hover:bg-accent/90" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
+                disabled={isLoading}
+              >
                 {isLoading ? "Criando conta..." : "Criar conta"}
               </Button>
             </form>
