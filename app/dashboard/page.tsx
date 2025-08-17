@@ -93,7 +93,7 @@ export default function DashboardPage() {
       title: "Gerar Copy",
       description: "Crie textos persuasivos com IA",
       icon: Zap,
-      href: "/copy-generator",
+      href: "/dashboard/copy-generator", // Updated path to dashboard structure
       color: "bg-gradient-to-br from-blue-500 to-blue-600",
       textColor: "text-white",
     },
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       title: "Explorar Produtos",
       description: "Descubra produtos nichados validados",
       icon: Target,
-      href: "/products",
+      href: "/dashboard/products", // Updated path to dashboard structure
       color: "bg-gradient-to-br from-purple-500 to-purple-600",
       textColor: "text-white",
     },

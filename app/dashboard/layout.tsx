@@ -26,22 +26,22 @@ const navigation = [
   },
   {
     name: "Gerador de Copy",
-    href: "/copy-generator",
+    href: "/dashboard/copy-generator", // Updated path to dashboard structure
     icon: Zap,
   },
   {
     name: "Produtos Nichados",
-    href: "/products",
+    href: "/dashboard/products", // Updated path to dashboard structure
     icon: Target,
   },
   {
     name: "Analytics",
-    href: "/analytics",
+    href: "/dashboard/analytics", // Updated to dashboard structure
     icon: BarChart3,
   },
   {
     name: "Configurações",
-    href: "/settings",
+    href: "/dashboard/configuracoes", // Updated to dashboard structure
     icon: Settings,
   },
 ]
@@ -134,7 +134,9 @@ export default function DashboardLayout({
                 <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/settings">
+                  <Link href="/dashboard/configuracoes">
+                    {" "}
+                    {/* Updated settings link */}
                     <Settings className="w-4 h-4 mr-2" />
                     Configurações
                   </Link>
