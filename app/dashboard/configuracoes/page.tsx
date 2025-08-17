@@ -15,11 +15,11 @@ export default function ConfiguracoesPage() {
   const { user } = useAuth()
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-animate>
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Configurações</h1>
-        <p className="text-slate-600 mt-1">Gerencie sua conta e preferências</p>
+        <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
+        <p className="text-muted-foreground mt-1">Gerencie sua conta e preferências</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -28,7 +28,7 @@ export default function ConfiguracoesPage() {
           <Card>
             <CardContent className="p-6">
               <div className="space-y-1">
-                <Button variant="ghost" className="w-full justify-start bg-slate-100">
+                <Button variant="ghost" className="w-full justify-start bg-accent text-foreground">
                   <User className="h-4 w-4 mr-3" />
                   Perfil
                 </Button>

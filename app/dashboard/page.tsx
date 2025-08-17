@@ -29,7 +29,7 @@ export default function DashboardPage() {
       change: "+12%",
       changeType: "positive" as const,
       icon: Zap,
-      color: "bg-blue-500",
+      color: "bg-primary",
     },
     {
       title: "Taxa de Conversão",
@@ -37,7 +37,7 @@ export default function DashboardPage() {
       change: "+0.8%",
       changeType: "positive" as const,
       icon: TrendingUp,
-      color: "bg-emerald-500",
+      color: "bg-primary",
     },
     {
       title: "Produtos Analisados",
@@ -45,7 +45,7 @@ export default function DashboardPage() {
       change: "+5",
       changeType: "positive" as const,
       icon: Target,
-      color: "bg-purple-500",
+      color: "bg-primary",
     },
     {
       title: "ROI Médio",
@@ -53,7 +53,7 @@ export default function DashboardPage() {
       change: "+23%",
       changeType: "positive" as const,
       icon: DollarSign,
-      color: "bg-amber-500",
+      color: "bg-primary",
     },
   ]
 
@@ -94,7 +94,7 @@ export default function DashboardPage() {
       description: "Crie textos persuasivos com IA",
       icon: Zap,
       href: "/dashboard/copy-generator", // Updated path to dashboard structure
-      color: "bg-gradient-to-br from-blue-500 to-blue-600",
+      color: "bg-primary",
       textColor: "text-white",
     },
     {
@@ -102,7 +102,7 @@ export default function DashboardPage() {
       description: "Descubra produtos nichados validados",
       icon: Target,
       href: "/dashboard/products", // Updated path to dashboard structure
-      color: "bg-gradient-to-br from-purple-500 to-purple-600",
+      color: "bg-primary",
       textColor: "text-white",
     },
     {
@@ -110,21 +110,21 @@ export default function DashboardPage() {
       description: "Acompanhe suas métricas",
       icon: BarChart3,
       href: "/analytics",
-      color: "bg-gradient-to-br from-emerald-500 to-emerald-600",
+      color: "bg-primary",
       textColor: "text-white",
     },
   ]
 
   return (
-    <div className="min-h-screen space-y-8 pb-12">
+    <div className="min-h-screen space-y-8 pb-12" data-animate>
       {/* Header */}
-      <div className="border-b border-slate-200 pb-8">
+      <div className="border-b border-border pb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">
+            <h1 className="text-4xl font-bold text-foreground mb-2">
               Bem-vindo, {user?.name?.split(" ")[0] || "Usuário"}
             </h1>
-            <p className="text-lg text-slate-600">
+            <p className="text-lg text-muted-foreground">
               Gerencie suas campanhas de marketing digital e acompanhe seus resultados
             </p>
           </div>
@@ -133,8 +133,8 @@ export default function DashboardPage() {
               variant={user?.plan === "pro" ? "default" : "secondary"}
               className={`px-4 py-2 text-sm font-semibold ${
                 user?.plan === "pro"
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
-                  : "bg-slate-200 text-slate-700"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground"
               }`}
             >
               {user?.plan === "pro" ? "PLANO PRO" : "PLANO STARTER"}
@@ -144,15 +144,15 @@ export default function DashboardPage() {
       </div>
 
       {/* Account Status */}
-      <Card className="border-l-4 border-l-blue-500 bg-white shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="border-l-4 border-l-primary bg-card shadow-lg hover:shadow-xl transition-shadow" data-animate>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-xl font-semibold text-slate-900 flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-blue-500" />
+              <CardTitle className="text-xl font-semibold text-foreground flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-primary" />
                 <span>Status da Conta</span>
               </CardTitle>
-              <CardDescription className="text-slate-600 mt-2">
+              <CardDescription className="text-muted-foreground mt-2">
                 {user?.plan === "pro"
                   ? "Você tem acesso completo a todas as funcionalidades premium"
                   : "Faça upgrade para Pro e desbloqueie recursos avançados de IA"}
@@ -164,11 +164,11 @@ export default function DashboardPage() {
           <CardContent className="pt-0">
             <div className="space-y-4">
               <div className="flex justify-between text-sm font-medium">
-                <span className="text-slate-700">Copies utilizadas este mês</span>
-                <span className="text-slate-900">67/100</span>
+                <span className="text-muted-foreground">Copies utilizadas este mês</span>
+                <span className="text-foreground">67/100</span>
               </div>
               <Progress value={67} className="h-3" />
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold">
+              <Button className="font-semibold">
                 Fazer Upgrade para Pro
               </Button>
             </div>
@@ -183,20 +183,20 @@ export default function DashboardPage() {
           return (
             <Card
               key={stat.title}
-              className="bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              className="bg-card shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-slate-600">{stat.title}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
                 <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
                   <Icon className="h-5 w-5 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-slate-900 mb-2">{stat.value}</div>
+                <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
                 <div className="flex items-center space-x-1 text-sm">
-                  <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                  <span className="text-emerald-600 font-semibold">{stat.change}</span>
-                  <span className="text-slate-500">vs mês anterior</span>
+                  <ArrowUpRight className="h-4 w-4 text-primary" />
+                  <span className="text-primary font-semibold">{stat.change}</span>
+                  <span className="text-muted-foreground">vs mês anterior</span>
                 </div>
               </CardContent>
             </Card>
@@ -206,14 +206,14 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">Ações Rápidas</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-6">Ações Rápidas</h2>
         <div className="grid gap-6 md:grid-cols-3">
           {quickActions.map((action) => {
             const Icon = action.icon
             return (
               <Card
                 key={action.title}
-                className="bg-white shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden"
+                className="bg-card shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden"
               >
                 <Link href={action.href}>
                   <CardHeader className="p-6">
@@ -224,10 +224,10 @@ export default function DashboardPage() {
                         <Icon className="w-7 h-7 text-white" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="text-xl font-bold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        <CardTitle className="text-xl font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
                           {action.title}
                         </CardTitle>
-                        <CardDescription className="text-slate-600 text-base">{action.description}</CardDescription>
+                        <CardDescription className="text-muted-foreground text-base">{action.description}</CardDescription>
                       </div>
                     </div>
                   </CardHeader>
@@ -241,10 +241,10 @@ export default function DashboardPage() {
       {/* Bottom Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Activity */}
-        <Card className="bg-white shadow-lg">
+        <Card className="bg-card shadow-lg">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 text-slate-900">
-              <Activity className="w-6 h-6 text-blue-500" />
+            <CardTitle className="flex items-center space-x-2 text-foreground">
+              <Activity className="w-6 h-6 text-primary" />
               <span className="text-xl font-bold">Atividade Recente</span>
             </CardTitle>
           </CardHeader>
@@ -255,15 +255,15 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={index}
-                    className="flex items-start space-x-4 p-4 rounded-xl hover:bg-slate-50 transition-colors"
+                    className="flex items-start space-x-4 p-4 rounded-xl hover:bg-accent transition-colors"
                   >
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-blue-600" />
+                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1 space-y-1">
-                      <p className="font-semibold text-slate-900">{activity.action}</p>
-                      <p className="text-slate-600">{activity.description}</p>
-                      <p className="text-sm text-slate-500 flex items-center">
+                      <p className="font-semibold text-foreground">{activity.action}</p>
+                      <p className="text-muted-foreground">{activity.description}</p>
+                      <p className="text-sm text-muted-foreground flex items-center">
                         <Clock className="w-3 h-3 mr-1" />
                         {activity.time}
                       </p>
@@ -276,10 +276,10 @@ export default function DashboardPage() {
         </Card>
 
         {/* Performance */}
-        <Card className="bg-white shadow-lg">
+        <Card className="bg-card shadow-lg" data-animate>
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center space-x-2 text-slate-900">
-              <BarChart3 className="w-6 h-6 text-emerald-500" />
+            <CardTitle className="flex items-center space-x-2 text-foreground">
+              <BarChart3 className="w-6 h-6 text-primary" />
               <span className="text-xl font-bold">Performance dos Últimos 7 Dias</span>
             </CardTitle>
           </CardHeader>
@@ -287,24 +287,24 @@ export default function DashboardPage() {
             <div className="space-y-6">
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-slate-700">Copies geradas</span>
-                  <span className="font-bold text-slate-900 text-lg">23</span>
+                  <span className="font-medium text-muted-foreground">Copies geradas</span>
+                  <span className="font-bold text-foreground text-lg">23</span>
                 </div>
                 <Progress value={85} className="h-3" />
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-slate-700">Taxa de sucesso</span>
-                  <span className="font-bold text-slate-900 text-lg">92%</span>
+                  <span className="font-medium text-muted-foreground">Taxa de sucesso</span>
+                  <span className="font-bold text-foreground text-lg">92%</span>
                 </div>
                 <Progress value={92} className="h-3" />
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-slate-700">Produtos analisados</span>
-                  <span className="font-bold text-slate-900 text-lg">8</span>
+                  <span className="font-medium text-muted-foreground">Produtos analisados</span>
+                  <span className="font-bold text-foreground text-lg">8</span>
                 </div>
                 <Progress value={60} className="h-3" />
               </div>
@@ -314,19 +314,19 @@ export default function DashboardPage() {
       </div>
 
       {/* Insights Card */}
-      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 shadow-lg">
+      <Card className="bg-accent border border-border shadow-lg" data-animate>
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center space-x-2 text-slate-900">
-            <Users className="w-6 h-6 text-blue-600" />
+          <CardTitle className="flex items-center space-x-2 text-foreground">
+            <Users className="w-6 h-6 text-primary" />
             <span className="text-xl font-bold">Insights e Recomendações</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-700 mb-6 leading-relaxed text-lg">
+          <p className="text-muted-foreground mb-6 leading-relaxed text-lg">
             Para maximizar suas conversões, experimente diferentes variações de headlines para o mesmo produto. Nossa IA
             pode gerar múltiplas versões otimizadas que você pode testar.
           </p>
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-6 py-3">
+          <Button className="font-semibold px-6 py-3">
             <Sparkles className="w-4 h-4 mr-2" />
             Gerar Headlines Agora
           </Button>

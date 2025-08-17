@@ -23,16 +23,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users away from auth pages
-  const authRoutes = ["/login", "/register"]
-  const isAuthRoute = authRoutes.includes(pathname)
-
-  if (isAuthRoute) {
-    const userCookie = request.cookies.get("marketpro_user")
-    if (userCookie) {
-      return NextResponse.redirect(new URL("/dashboard", request.url))
-    }
-  }
+  // Allow auth pages to be accessed even if authenticated
 
   return NextResponse.next()
 }

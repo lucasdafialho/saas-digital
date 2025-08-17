@@ -42,7 +42,7 @@ const copyTypes = [
     description: "Títulos que chamam atenção",
     color: "bg-red-500",
   },
-  { value: "email", label: "E-mails de Vendas", icon: Mail, description: "E-mails persuasivos", color: "bg-blue-500" },
+  { value: "email", label: "E-mails de Vendas", icon: Mail, description: "E-mails persuasivos", color: "bg-primary" },
   {
     value: "social",
     label: "Posts Sociais",
@@ -189,39 +189,35 @@ export default function CopyGeneratorPage() {
   const selectedTypeData = copyTypes.find((type) => type.value === selectedType)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
+    <div className="min-h-screen bg-background" data-animate>
       <div className="space-y-8 p-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">Gerador de Copy IA</h1>
-            <p className="text-lg text-slate-600">Crie textos persuasivos em segundos com inteligência artificial</p>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Gerador de Copy IA</h1>
+            <p className="text-lg text-muted-foreground">Crie textos persuasivos em segundos com inteligência artificial</p>
           </div>
-          <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 text-sm font-semibold">
-            <Sparkles className="w-4 h-4 mr-2" />
-            Powered by Gemini
-          </Badge>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2 space-y-8">
-            <Card className="shadow-lg bg-white">
+            <Card className="shadow-lg bg-card">
               <CardHeader className="pb-6">
-                <CardTitle className="flex items-center space-x-3 text-2xl font-bold text-slate-900">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
-                    <Wand2 className="w-5 h-5 text-white" />
+                <CardTitle className="flex items-center space-x-3 text-2xl font-bold text-foreground">
+                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+                    <Wand2 className="w-5 h-5 text-primary-foreground" />
                   </div>
                   <span>Configurar Copy</span>
                 </CardTitle>
-                <CardDescription className="text-base text-slate-600">
+                <CardDescription className="text-base text-muted-foreground">
                   Preencha as informações para gerar copies personalizadas com IA
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
                 {/* Copy Type Selection */}
                 <div className="space-y-4">
-                  <Label className="text-base font-semibold text-slate-900">Tipo de Copy</Label>
+                  <Label className="text-base font-semibold text-foreground">Tipo de Copy</Label>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {copyTypes.map((type) => {
                       const Icon = type.icon
@@ -231,15 +227,15 @@ export default function CopyGeneratorPage() {
                           onClick={() => setSelectedType(type.value)}
                           className={`p-5 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-lg ${
                             selectedType === type.value
-                              ? "border-blue-500 bg-blue-50 shadow-lg"
-                              : "border-slate-200 hover:border-blue-300 bg-white"
+                              ? "border-primary bg-primary/10 shadow-lg"
+                              : "border-border hover:border-primary bg-card"
                           }`}
                         >
                           <div className={`w-10 h-10 ${type.color} rounded-lg flex items-center justify-center mb-3`}>
                             <Icon className="w-5 h-5 text-white" />
                           </div>
-                          <div className="font-semibold text-slate-900 mb-1">{type.label}</div>
-                          <div className="text-sm text-slate-600">{type.description}</div>
+                          <div className="font-semibold text-foreground mb-1">{type.label}</div>
+                          <div className="text-sm text-muted-foreground">{type.description}</div>
                         </button>
                       )
                     })}
@@ -251,7 +247,7 @@ export default function CopyGeneratorPage() {
                 {/* Form Fields */}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-3">
-                    <Label htmlFor="product" className="text-base font-semibold text-slate-900">
+                    <Label htmlFor="product" className="text-base font-semibold text-foreground">
                       Produto/Serviço *
                     </Label>
                     <Input
@@ -264,7 +260,7 @@ export default function CopyGeneratorPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label htmlFor="audience" className="text-base font-semibold text-slate-900">
+                    <Label htmlFor="audience" className="text-base font-semibold text-foreground">
                       Público-Alvo *
                     </Label>
                     <Input
@@ -278,7 +274,7 @@ export default function CopyGeneratorPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="benefit" className="text-base font-semibold text-slate-900">
+                  <Label htmlFor="benefit" className="text-base font-semibold text-foreground">
                     Principal Benefício *
                   </Label>
                   <Input
@@ -291,7 +287,7 @@ export default function CopyGeneratorPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="tone" className="text-base font-semibold text-slate-900">
+                  <Label htmlFor="tone" className="text-base font-semibold text-foreground">
                     Tom de Voz
                   </Label>
                   <Select
@@ -312,7 +308,7 @@ export default function CopyGeneratorPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="context" className="text-base font-semibold text-slate-900">
+                  <Label htmlFor="context" className="text-base font-semibold text-foreground">
                     Contexto Adicional
                   </Label>
                   <Textarea
@@ -328,7 +324,7 @@ export default function CopyGeneratorPage() {
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating || !formData.product || !formData.audience || !formData.benefit}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold h-14 text-lg"
+                  className="w-full h-14 text-lg"
                 >
                   {isGenerating ? (
                     <>
@@ -347,17 +343,17 @@ export default function CopyGeneratorPage() {
 
             {/* Templates */}
             {selectedTypeData && templates[selectedType as keyof typeof templates] && (
-              <Card className="shadow-lg bg-white">
+              <Card className="shadow-lg bg-card">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold text-slate-900">
+                  <CardTitle className="text-xl font-bold text-foreground">
                     Templates de {selectedTypeData.label}
                   </CardTitle>
-                  <CardDescription className="text-base">Exemplos de estruturas que funcionam</CardDescription>
+                  <CardDescription className="text-base text-muted-foreground">Exemplos de estruturas que funcionam</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {templates[selectedType as keyof typeof templates].map((template, index) => (
-                      <div key={index} className="p-4 bg-slate-50 rounded-lg text-sm border border-slate-200">
+                      <div key={index} className="p-4 bg-accent rounded-lg text-sm border border-border">
                         {template}
                       </div>
                     ))}
@@ -381,26 +377,26 @@ export default function CopyGeneratorPage() {
 
               <TabsContent value="results" className="space-y-4 mt-6">
                 {results.length === 0 ? (
-                  <Card className="shadow-lg">
+                  <Card className="shadow-lg bg-card">
                     <CardContent className="flex flex-col items-center justify-center py-16">
-                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-4">
-                        <Sparkles className="w-8 h-8 text-white" />
+                      <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4">
+                        <Sparkles className="w-8 h-8 text-primary-foreground" />
                       </div>
-                      <p className="text-slate-600 text-center text-base">
+                      <p className="text-muted-foreground text-center text-base">
                         Preencha o formulário e clique em "Gerar Copy" para ver os resultados aqui
                       </p>
                     </CardContent>
                   </Card>
                 ) : (
                   results.map((result, index) => (
-                    <Card key={result.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                    <Card key={result.id} className="shadow-lg hover:shadow-xl transition-shadow bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Badge variant="outline" className="font-semibold">
                               {copyTypes.find((t) => t.value === result.type)?.label}
                             </Badge>
-                            <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white">
+                            <Badge className="bg-primary text-primary-foreground">
                               Versão {index + 1}
                             </Badge>
                           </div>
@@ -409,7 +405,7 @@ export default function CopyGeneratorPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => toggleLike(result.id)}
-                              className={`hover:bg-red-50 ${result.liked ? "text-red-500" : "text-slate-400"}`}
+                              className={`hover:bg-accent ${result.liked ? "text-red-500" : "text-muted-foreground"}`}
                             >
                               <Heart className={`w-4 h-4 ${result.liked ? "fill-current" : ""}`} />
                             </Button>
@@ -417,7 +413,7 @@ export default function CopyGeneratorPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => copyToClipboard(result.content)}
-                              className="hover:bg-blue-50 text-slate-600 hover:text-blue-600"
+                              className="hover:bg-accent text-muted-foreground hover:text-foreground"
                             >
                               <Copy className="w-4 h-4" />
                             </Button>
@@ -425,7 +421,7 @@ export default function CopyGeneratorPage() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="whitespace-pre-wrap text-base leading-relaxed text-slate-700 bg-slate-50 p-4 rounded-lg border">
+                        <div className="whitespace-pre-wrap text-base leading-relaxed text-foreground bg-accent p-4 rounded-lg border">
                           {result.content}
                         </div>
                       </CardContent>
@@ -436,35 +432,35 @@ export default function CopyGeneratorPage() {
 
               <TabsContent value="history" className="space-y-4 mt-6">
                 {history.length === 0 ? (
-                  <Card className="shadow-lg">
+                  <Card className="shadow-lg bg-card">
                     <CardContent className="flex flex-col items-center justify-center py-16">
-                      <Clock className="w-16 h-16 text-slate-400 mb-4" />
-                      <p className="text-slate-600 text-center text-base">Seu histórico de copies aparecerá aqui</p>
+                      <Clock className="w-16 h-16 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground text-center text-base">Seu histórico de copies aparecerá aqui</p>
                     </CardContent>
                   </Card>
                 ) : (
                   history.slice(0, 10).map((result) => (
-                    <Card key={result.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                    <Card key={result.id} className="shadow-lg hover:shadow-xl transition-shadow bg-card">
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Badge variant="outline" className="font-semibold">
                               {copyTypes.find((t) => t.value === result.type)?.label}
                             </Badge>
-                            <span className="text-sm text-slate-500">{result.timestamp.toLocaleDateString()}</span>
+                            <span className="text-sm text-muted-foreground">{result.timestamp.toLocaleDateString()}</span>
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => copyToClipboard(result.content)}
-                            className="hover:bg-blue-50 text-slate-600 hover:text-blue-600"
+                            className="hover:bg-accent text-muted-foreground hover:text-foreground"
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="whitespace-pre-wrap text-sm line-clamp-3 text-slate-700">{result.content}</div>
+                        <div className="whitespace-pre-wrap text-sm line-clamp-3 text-muted-foreground">{result.content}</div>
                       </CardContent>
                     </Card>
                   ))
@@ -473,31 +469,31 @@ export default function CopyGeneratorPage() {
             </Tabs>
 
             {/* Usage Stats */}
-            <Card className="shadow-lg">
+            <Card className="shadow-lg bg-card">
               <CardHeader>
-                <CardTitle className="text-xl font-bold text-slate-900 flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                <CardTitle className="text-xl font-bold text-foreground flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-primary" />
                   <span>Uso Mensal</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between text-base">
-                    <span className="font-medium text-slate-700">Copies geradas</span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-medium text-muted-foreground">Copies geradas</span>
+                    <span className="font-bold text-foreground">
                       {user?.plan === "pro" ? "Ilimitado" : `${history.length}/100`}
                     </span>
                   </div>
                   {user?.plan === "starter" && (
-                    <div className="w-full bg-slate-200 rounded-full h-3">
+                    <div className="w-full bg-accent rounded-full h-3">
                       <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                        className="bg-primary h-3 rounded-full transition-all duration-300"
                         style={{ width: `${Math.min((history.length / 100) * 100, 100)}%` }}
                       />
                     </div>
                   )}
                   {user?.plan === "starter" && history.length > 80 && (
-                    <div className="flex items-center space-x-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                    <div className="flex items-center space-x-2 text-sm text-primary bg-accent p-3 rounded-lg">
                       <CheckCircle className="w-4 h-4" />
                       <span>Considere fazer upgrade para Pro para copies ilimitadas</span>
                     </div>

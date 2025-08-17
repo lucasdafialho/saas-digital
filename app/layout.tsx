@@ -1,27 +1,28 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist } from "next/font/google"
-import { Manrope } from "next/font/google"
+import { Inter } from "next/font/google"
+import { Montserrat } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/hooks/use-auth"
+import { ScrollAnimate } from "@/components/scroll-animate"
 
-const geist = Geist({
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-geist",
+  variable: "--font-inter",
   weight: ["400", "500", "600", "700", "800", "900"],
 })
 
-const manrope = Manrope({
+const montserrat = Montserrat({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-manrope",
-  weight: ["400", "500", "600", "700"],
+  variable: "--font-montserrat",
+  weight: ["400", "500", "600", "700", "800"],
 })
 
 export const metadata: Metadata = {
-  title: "MarketPro - Enterprise Marketing Platform",
-  description: "Professional B2B marketing automation platform with AI-powered copywriting and market intelligence.",
+  title: "MarketPro - Plataforma de Marketing Digital",
+  description: "Plataforma profissional de marketing digital com IA para conversão e crescimento.",
   generator: "v0.app",
 }
 
@@ -31,8 +32,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${manrope.variable} antialiased`}>
+    <html lang="pt-BR" className={`${inter.variable} ${montserrat.variable} antialiased`}>
       <body>
+        <ScrollAnimate />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

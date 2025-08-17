@@ -223,7 +223,7 @@ export default function ProductsPage() {
       case "low":
         return "text-gray-600 bg-gray-50"
       case "medium":
-        return "text-blue-600 bg-blue-50"
+        return "text-primary bg-primary/10"
       case "high":
         return "text-green-600 bg-green-50"
       case "very-high":
@@ -245,10 +245,10 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-animate>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Produtos Nichados</h1>
+          <h1 className="text-3xl font-bold text-foreground">Produtos Nichados</h1>
           <p className="text-muted-foreground">Descubra produtos digitais validados com alta demanda</p>
         </div>
         <Badge variant="secondary" className="flex items-center space-x-1">
@@ -258,9 +258,9 @@ export default function ProductsPage() {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card data-animate>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2 text-foreground">
             <Filter className="w-5 h-5" />
             <span>Filtros</span>
           </CardTitle>
@@ -358,7 +358,7 @@ export default function ProductsPage() {
         <div className="lg:col-span-2">
           <div className="grid gap-4">
             {filteredProducts.map((product) => (
-              <Card key={product.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={product.id} className="hover:shadow-lg transition-shadow cursor-pointer bg-card" data-animate>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -381,8 +381,8 @@ export default function ProductsPage() {
                                 : "Muito Alto Lucro"}
                         </Badge>
                       </div>
-                      <CardTitle className="text-lg">{product.title}</CardTitle>
-                      <CardDescription className="mt-2">{product.description}</CardDescription>
+                      <CardTitle className="text-lg text-foreground">{product.title}</CardTitle>
+                      <CardDescription className="mt-2 text-muted-foreground">{product.description}</CardDescription>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
@@ -406,11 +406,11 @@ export default function ProductsPage() {
                       <div className="text-xs text-muted-foreground">Score Demanda</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-accent">{product.validationScore}</div>
+                      <div className="text-2xl font-bold text-foreground">{product.validationScore}</div>
                       <div className="text-xs text-muted-foreground">Score Validação</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold">{(product.monthlySearches / 1000).toFixed(0)}K</div>
+                      <div className="text-2xl font-bold text-foreground">{(product.monthlySearches / 1000).toFixed(0)}K</div>
                       <div className="text-xs text-muted-foreground">Buscas/mês</div>
                     </div>
                     <div className="text-center flex items-center justify-center">
@@ -451,7 +451,7 @@ export default function ProductsPage() {
         {/* Product Details Sidebar */}
         <div className="space-y-6">
           {selectedProduct ? (
-            <Card>
+            <Card className="bg-card" data-animate>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Target className="w-5 h-5" />
@@ -460,7 +460,7 @@ export default function ProductsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-semibold mb-2">{selectedProduct.title}</h3>
+                  <h3 className="font-semibold mb-2 text-foreground">{selectedProduct.title}</h3>
                   <p className="text-sm text-muted-foreground">{selectedProduct.description}</p>
                 </div>
 

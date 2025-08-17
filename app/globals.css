@@ -4,75 +4,74 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated to ultra-professional B2B color scheme */
-  --background: #ffffff;
-  --foreground: #475569;
-  --card: #ecfeff;
-  --card-foreground: #164e63;
-  --popover: #ffffff;
-  --popover-foreground: #475569;
-  --primary: #164e63;
+  --background: #0b0b0c;
+  --foreground: #f3f4f6;
+  --card: #121214;
+  --card-foreground: #f3f4f6;
+  --popover: #121214;
+  --popover-foreground: #f3f4f6;
+  --primary: #e11d2e;
   --primary-foreground: #ffffff;
-  --secondary: #1f2937;
-  --secondary-foreground: #ffffff;
-  --muted: #f5f5f5;
-  --muted-foreground: #475569;
-  --accent: #ecfeff;
-  --accent-foreground: #164e63;
-  --destructive: #ea580c;
+  --secondary: #18181b;
+  --secondary-foreground: #f3f4f6;
+  --muted: #0f0f11;
+  --muted-foreground: #9ca3af;
+  --accent: #1f1f23;
+  --accent-foreground: #f3f4f6;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #d1d5db;
-  --input: #ffffff;
-  --ring: #164e63;
-  --chart-1: #164e63;
-  --chart-2: #1f2937;
-  --chart-3: #475569;
-  --chart-4: #ea580c;
-  --chart-5: #f5f5f5;
+  --border: #27272a;
+  --input: #18181b;
+  --ring: #e11d2e;
+  --chart-1: #e11d2e;
+  --chart-2: #ef4444;
+  --chart-3: #f3f4f6;
+  --chart-4: #9ca3af;
+  --chart-5: #1f1f23;
   --radius: 0.5rem;
-  --sidebar: #f9fafb;
-  --sidebar-foreground: #475569;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #164e63;
-  --sidebar-accent: #ecfeff;
-  --sidebar-accent-foreground: #164e63;
-  --sidebar-border: #d1d5db;
-  --sidebar-ring: #164e63;
+  --sidebar: #0b0b0c;
+  --sidebar-foreground: #f3f4f6;
+  --sidebar-primary: #121214;
+  --sidebar-primary-foreground: #f3f4f6;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #f3f4f6;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #e11d2e;
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #e2e8f0;
-  --card: #1e293b;
-  --card-foreground: #e2e8f0;
-  --popover: #1e293b;
-  --popover-foreground: #e2e8f0;
-  --primary: #0ea5e9;
-  --primary-foreground: #0f172a;
-  --secondary: #334155;
-  --secondary-foreground: #e2e8f0;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #e2e8f0;
-  --destructive: #f97316;
-  --destructive-foreground: #0f172a;
-  --border: #334155;
-  --input: #1e293b;
-  --ring: #0ea5e9;
-  --chart-1: #0ea5e9;
-  --chart-2: #334155;
-  --chart-3: #e2e8f0;
-  --chart-4: #f97316;
-  --chart-5: #1e293b;
-  --sidebar: #0f172a;
-  --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #1e293b;
-  --sidebar-primary-foreground: #e2e8f0;
-  --sidebar-accent: #334155;
-  --sidebar-accent-foreground: #e2e8f0;
-  --sidebar-border: #334155;
-  --sidebar-ring: #0ea5e9;
+  --background: #0b0b0c;
+  --foreground: #f3f4f6;
+  --card: #121214;
+  --card-foreground: #f3f4f6;
+  --popover: #121214;
+  --popover-foreground: #f3f4f6;
+  --primary: #e11d2e;
+  --primary-foreground: #ffffff;
+  --secondary: #18181b;
+  --secondary-foreground: #f3f4f6;
+  --muted: #0f0f11;
+  --muted-foreground: #9ca3af;
+  --accent: #1f1f23;
+  --accent-foreground: #f3f4f6;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #27272a;
+  --input: #18181b;
+  --ring: #e11d2e;
+  --chart-1: #e11d2e;
+  --chart-2: #ef4444;
+  --chart-3: #f3f4f6;
+  --chart-4: #9ca3af;
+  --chart-5: #1f1f23;
+  --sidebar: #0b0b0c;
+  --sidebar-foreground: #f3f4f6;
+  --sidebar-primary: #121214;
+  --sidebar-primary-foreground: #f3f4f6;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #f3f4f6;
+  --sidebar-border: #27272a;
+  --sidebar-ring: #e11d2e;
 }
 
 @theme inline {
@@ -113,9 +112,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Updated to professional corporate fonts */
-  --font-sans: "Geist", system-ui, sans-serif;
-  --font-serif: "Manrope", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Montserrat", system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 

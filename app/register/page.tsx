@@ -203,16 +203,16 @@ export default function RegisterPage() {
                   onChange={(e) => setAcceptTerms(e.target.checked)}
                   className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2 mt-0.5"
                 />
-                <Label htmlFor="terms" className="text-sm leading-relaxed">
-                  Eu aceito os{" "}
-                  <Link href="/terms" className="text-primary hover:underline">
+                <label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer text-foreground">
+                  Eu aceito os {""}
+                  <Link href="/terms" className="text-primary hover:underline underline-offset-2">
                     Termos de Uso
                   </Link>{" "}
-                  e{" "}
-                  <Link href="/privacy" className="text-primary hover:underline">
+                  e {""}
+                  <Link href="/privacy" className="text-primary hover:underline underline-offset-2">
                     Política de Privacidade
                   </Link>
-                </Label>
+                </label>
               </div>
 
               <Button

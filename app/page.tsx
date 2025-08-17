@@ -3,17 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Brain, BarChart3, Shield, Users, Zap } from "lucide-react"
 import Link from "next/link"
+import { ScrollAnimate } from "@/components/scroll-animate"
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
+      <ScrollAnimate />
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
               <div className="w-6 h-6 bg-primary-foreground rounded-sm"></div>
             </div>
-            <span className="text-2xl font-bold tracking-tight">MarketPro</span>
+            <span className="text-2xl font-bold tracking-tight text-foreground">MarketPro</span>
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
@@ -33,16 +35,16 @@ export default function LandingPage() {
 
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="default" asChild>
-              <Link href="/login">Entrar</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
             <Button size="default" asChild>
-              <Link href="/register">Começar Agora</Link>
+              <Link href="/register">Get started</Link>
             </Button>
           </div>
         </div>
       </header>
 
-      <section className="py-24 px-6">
+      <section className="py-24 px-6" data-animate>
         <div className="container mx-auto text-center max-w-5xl">
           <Badge variant="secondary" className="mb-8 px-4 py-2 text-sm font-medium">
             Plataforma de Marketing Digital com IA
@@ -60,10 +62,10 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
             <Button size="lg" className="text-lg px-10 py-4" asChild>
-              <Link href="/register">Começar Grátis</Link>
+              <Link href="/register">Start free</Link>
             </Button>
             <Button variant="outline" size="lg" className="text-lg px-10 py-4 bg-transparent">
-              Ver Demonstração
+              View demo
             </Button>
           </div>
 
@@ -84,7 +86,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="platform" className="py-24 px-6 bg-muted/20">
+      <section id="platform" className="py-24 px-6 bg-muted/20" data-animate>
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Funcionalidades da Plataforma</h2>
@@ -94,7 +96,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300">
+            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300" data-animate>
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                   <Brain className="w-7 h-7 text-primary" />
@@ -123,7 +125,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300">
+            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300" data-animate>
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                   <BarChart3 className="w-7 h-7 text-primary" />
@@ -151,7 +153,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300">
+            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300" data-animate>
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                   <Zap className="w-7 h-7 text-primary" />
@@ -182,7 +184,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="pricing" className="py-24 px-6">
+      <section id="pricing" className="py-24 px-6" data-animate>
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Planos e Preços</h2>
@@ -192,7 +194,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="border-2 border-border">
+            <Card className="border-2 border-border" data-animate>
               <CardHeader className="pb-6">
                 <CardTitle className="text-2xl mb-2">Starter</CardTitle>
                 <CardDescription className="text-base">Para empreendedores iniciantes</CardDescription>
@@ -220,12 +222,12 @@ export default function LandingPage() {
                   </li>
                 </ul>
                 <Button className="w-full bg-transparent" variant="outline" asChild>
-                  <Link href="/register">Começar Grátis</Link>
+                  <Link href="/register">Start free</Link>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-primary relative">
+            <Card className="border-2 border-primary relative" data-animate>
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-primary text-primary-foreground px-4 py-1">Mais Popular</Badge>
               </div>
@@ -260,7 +262,7 @@ export default function LandingPage() {
                   </li>
                 </ul>
                 <Button className="w-full" asChild>
-                  <Link href="/register">Começar Agora</Link>
+                  <Link href="/register">Get started</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -268,22 +270,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-24 px-6 bg-primary text-primary-foreground">
+      <section className="py-24 px-6 bg-primary text-primary-foreground" data-animate>
         <div className="container mx-auto text-center max-w-4xl">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Pronto Para Vender Mais?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Ready to sell more?</h2>
           <p className="text-xl mb-12 opacity-90 leading-relaxed">
-            Junte-se a milhares de empreendedores que já estão usando o MarketPro para aumentar suas vendas online.
+            Join thousands of entrepreneurs already using MarketPro to boost online sales.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Button size="lg" variant="secondary" className="text-lg px-10 py-4" asChild>
-              <Link href="/register">Começar Grátis</Link>
+              <Link href="/register">Start free</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="text-lg px-10 py-4 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent"
             >
-              Ver Demonstração
+              View demo
             </Button>
           </div>
         </div>
