@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       localStorage.setItem("marketpro_user", JSON.stringify(userData))
+      document.cookie = `marketpro_user=${JSON.stringify(userData)}; path=/; max-age=86400`
       setUser(userData)
       console.log("[v0] Login demo realizado com sucesso")
     } else if (email === "zshotbr@gmail.com" && password === "admin123") {
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       localStorage.setItem("marketpro_user", JSON.stringify(userData))
+      document.cookie = `marketpro_user=${JSON.stringify(userData)}; path=/; max-age=86400`
       setUser(userData)
       console.log("[v0] Login admin realizado com sucesso")
     } else {
@@ -88,11 +90,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     localStorage.setItem("marketpro_user", JSON.stringify(userData))
+    document.cookie = `marketpro_user=${JSON.stringify(userData)}; path=/; max-age=86400`
     setUser(userData)
   }
 
   const logout = () => {
     localStorage.removeItem("marketpro_user")
+    document.cookie = "marketpro_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
     setUser(null)
   }
 
