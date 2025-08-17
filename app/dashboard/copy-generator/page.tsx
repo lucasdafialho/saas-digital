@@ -108,35 +108,40 @@ export default function CopyGeneratorPage() {
     setIsGenerating(true)
 
     try {
-      // Simulate API call to Gemini
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      const res = await fetch("/api/generate-copy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: selectedType,
+          product: formData.product,
+          audience: formData.audience,
+          benefit: formData.benefit,
+          tone: formData.tone,
+          context: formData.context,
+        }),
+      })
 
-      const mockResults: CopyResult[] = [
-        {
-          id: Date.now().toString(),
-          type: selectedType,
-          content: generateMockCopy(selectedType, formData),
-          timestamp: new Date(),
-          liked: false,
-        },
-        {
-          id: (Date.now() + 1).toString(),
-          type: selectedType,
-          content: generateMockCopy(selectedType, formData, 2),
-          timestamp: new Date(),
-          liked: false,
-        },
-        {
-          id: (Date.now() + 2).toString(),
-          type: selectedType,
-          content: generateMockCopy(selectedType, formData, 3),
-          timestamp: new Date(),
-          liked: false,
-        },
-      ]
+      const text = await res.text()
+      let data: any = null
+      try {
+        data = text ? JSON.parse(text) : null
+      } catch {
+        data = null
+      }
+      if (!res.ok || !data?.success) {
+        throw new Error((data && data.error) || `Falha ao gerar (${res.status})`)
+      }
 
-      setResults(mockResults)
-      setHistory((prev) => [...mockResults, ...prev])
+      const mapped: CopyResult[] = (data.copies || []).map((c: any) => ({
+        id: String(c.id),
+        type: String(c.type || selectedType),
+        content: String(c.content || ""),
+        timestamp: new Date(c.timestamp || Date.now()),
+        liked: false,
+      }))
+
+      setResults(mapped)
+      setHistory((prev) => [...mapped, ...prev])
     } catch (error) {
       console.error("Erro ao gerar copy:", error)
     } finally {
