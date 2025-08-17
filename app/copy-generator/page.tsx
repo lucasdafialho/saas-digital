@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import {
-  Zap,
   Copy,
   Heart,
   RefreshCw,
@@ -22,6 +21,8 @@ import {
   FileText,
   Clock,
   CheckCircle,
+  Wand2,
+  TrendingUp,
 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -34,11 +35,29 @@ interface CopyResult {
 }
 
 const copyTypes = [
-  { value: "headline", label: "Headlines", icon: Megaphone, description: "Títulos que chamam atenção" },
-  { value: "email", label: "E-mails de Vendas", icon: Mail, description: "E-mails persuasivos" },
-  { value: "social", label: "Posts Sociais", icon: MessageSquare, description: "Conteúdo para redes sociais" },
-  { value: "ad", label: "Anúncios", icon: Sparkles, description: "Textos para anúncios pagos" },
-  { value: "description", label: "Descrições", icon: FileText, description: "Descrições de produtos" },
+  {
+    value: "headline",
+    label: "Headlines",
+    icon: Megaphone,
+    description: "Títulos que chamam atenção",
+    color: "bg-red-500",
+  },
+  { value: "email", label: "E-mails de Vendas", icon: Mail, description: "E-mails persuasivos", color: "bg-blue-500" },
+  {
+    value: "social",
+    label: "Posts Sociais",
+    icon: MessageSquare,
+    description: "Conteúdo para redes sociais",
+    color: "bg-green-500",
+  },
+  { value: "ad", label: "Anúncios", icon: Sparkles, description: "Textos para anúncios pagos", color: "bg-purple-500" },
+  {
+    value: "description",
+    label: "Descrições",
+    icon: FileText,
+    description: "Descrições de produtos",
+    color: "bg-amber-500",
+  },
 ]
 
 const toneOptions = [
@@ -170,267 +189,323 @@ export default function CopyGeneratorPage() {
   const selectedTypeData = copyTypes.find((type) => type.value === selectedType)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gerador de Copy IA</h1>
-          <p className="text-muted-foreground">Crie textos persuasivos em segundos com inteligência artificial</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100/50">
+      <div className="space-y-8 p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Gerador de Copy IA</h1>
+            <p className="text-lg text-slate-600">Crie textos persuasivos em segundos com inteligência artificial</p>
+          </div>
+          <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 text-sm font-semibold">
+            <Sparkles className="w-4 h-4 mr-2" />
+            Powered by Gemini
+          </Badge>
         </div>
-        <Badge variant="secondary" className="flex items-center space-x-1">
-          <Sparkles className="w-3 h-3" />
-          <span>Powered by Gemini</span>
-        </Badge>
-      </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Form Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Zap className="w-5 h-5" />
-                <span>Configurar Copy</span>
-              </CardTitle>
-              <CardDescription>Preencha as informações para gerar copies personalizadas</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Copy Type Selection */}
-              <div className="space-y-3">
-                <Label>Tipo de Copy</Label>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {copyTypes.map((type) => {
-                    const Icon = type.icon
-                    return (
-                      <button
-                        key={type.value}
-                        onClick={() => setSelectedType(type.value)}
-                        className={`p-4 rounded-lg border text-left transition-colors ${
-                          selectedType === type.value
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 mb-2 text-primary" />
-                        <div className="font-medium text-sm">{type.label}</div>
-                        <div className="text-xs text-muted-foreground">{type.description}</div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Form Fields */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="product">Produto/Serviço *</Label>
-                  <Input
-                    id="product"
-                    placeholder="Ex: Curso de Marketing Digital"
-                    value={formData.product}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, product: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="audience">Público-Alvo *</Label>
-                  <Input
-                    id="audience"
-                    placeholder="Ex: Empreendedores iniciantes"
-                    value={formData.audience}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, audience: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="benefit">Principal Benefício *</Label>
-                <Input
-                  id="benefit"
-                  placeholder="Ex: Aumentar vendas em 300%"
-                  value={formData.benefit}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, benefit: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tone">Tom de Voz</Label>
-                <Select
-                  value={formData.tone}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, tone: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {toneOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="context">Contexto Adicional</Label>
-                <Textarea
-                  id="context"
-                  placeholder="Informações extras sobre seu produto, promoções, urgência, etc."
-                  value={formData.context}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, context: e.target.value }))}
-                  rows={3}
-                />
-              </div>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating || !formData.product || !formData.audience || !formData.benefit}
-                className="w-full bg-accent hover:bg-accent/90"
-                size="lg"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Gerar Copy
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Templates */}
-          {selectedTypeData && templates[selectedType as keyof typeof templates] && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Templates de {selectedTypeData.label}</CardTitle>
-                <CardDescription>Exemplos de estruturas que funcionam</CardDescription>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Form Section */}
+          <div className="lg:col-span-2 space-y-8">
+            <Card className="shadow-lg bg-white">
+              <CardHeader className="pb-6">
+                <CardTitle className="flex items-center space-x-3 text-2xl font-bold text-slate-900">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+                    <Wand2 className="w-5 h-5 text-white" />
+                  </div>
+                  <span>Configurar Copy</span>
+                </CardTitle>
+                <CardDescription className="text-base text-slate-600">
+                  Preencha as informações para gerar copies personalizadas com IA
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {templates[selectedType as keyof typeof templates].map((template, index) => (
-                    <div key={index} className="p-3 bg-muted rounded-lg text-sm">
-                      {template}
-                    </div>
-                  ))}
+              <CardContent className="space-y-8">
+                {/* Copy Type Selection */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold text-slate-900">Tipo de Copy</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {copyTypes.map((type) => {
+                      const Icon = type.icon
+                      return (
+                        <button
+                          key={type.value}
+                          onClick={() => setSelectedType(type.value)}
+                          className={`p-5 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-lg ${
+                            selectedType === type.value
+                              ? "border-blue-500 bg-blue-50 shadow-lg"
+                              : "border-slate-200 hover:border-blue-300 bg-white"
+                          }`}
+                        >
+                          <div className={`w-10 h-10 ${type.color} rounded-lg flex items-center justify-center mb-3`}>
+                            <Icon className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="font-semibold text-slate-900 mb-1">{type.label}</div>
+                          <div className="text-sm text-slate-600">{type.description}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
+
+                <Separator />
+
+                {/* Form Fields */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <Label htmlFor="product" className="text-base font-semibold text-slate-900">
+                      Produto/Serviço *
+                    </Label>
+                    <Input
+                      id="product"
+                      placeholder="Ex: Curso de Marketing Digital"
+                      value={formData.product}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, product: e.target.value }))}
+                      className="h-12 text-base"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label htmlFor="audience" className="text-base font-semibold text-slate-900">
+                      Público-Alvo *
+                    </Label>
+                    <Input
+                      id="audience"
+                      placeholder="Ex: Empreendedores iniciantes"
+                      value={formData.audience}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, audience: e.target.value }))}
+                      className="h-12 text-base"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="benefit" className="text-base font-semibold text-slate-900">
+                    Principal Benefício *
+                  </Label>
+                  <Input
+                    id="benefit"
+                    placeholder="Ex: Aumentar vendas em 300%"
+                    value={formData.benefit}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, benefit: e.target.value }))}
+                    className="h-12 text-base"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="tone" className="text-base font-semibold text-slate-900">
+                    Tom de Voz
+                  </Label>
+                  <Select
+                    value={formData.tone}
+                    onValueChange={(value) => setFormData((prev) => ({ ...prev, tone: value }))}
+                  >
+                    <SelectTrigger className="h-12 text-base">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {toneOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="context" className="text-base font-semibold text-slate-900">
+                    Contexto Adicional
+                  </Label>
+                  <Textarea
+                    id="context"
+                    placeholder="Informações extras sobre seu produto, promoções, urgência, etc."
+                    value={formData.context}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, context: e.target.value }))}
+                    rows={4}
+                    className="text-base"
+                  />
+                </div>
+
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !formData.product || !formData.audience || !formData.benefit}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold h-14 text-lg"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
+                      Gerando Copy...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-3" />
+                      Gerar Copy com IA
+                    </>
+                  )}
+                </Button>
               </CardContent>
             </Card>
-          )}
-        </div>
 
-        {/* Results Section */}
-        <div className="space-y-6">
-          <Tabs defaultValue="results" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="results">Resultados</TabsTrigger>
-              <TabsTrigger value="history">Histórico</TabsTrigger>
-            </TabsList>
+            {/* Templates */}
+            {selectedTypeData && templates[selectedType as keyof typeof templates] && (
+              <Card className="shadow-lg bg-white">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold text-slate-900">
+                    Templates de {selectedTypeData.label}
+                  </CardTitle>
+                  <CardDescription className="text-base">Exemplos de estruturas que funcionam</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {templates[selectedType as keyof typeof templates].map((template, index) => (
+                      <div key={index} className="p-4 bg-slate-50 rounded-lg text-sm border border-slate-200">
+                        {template}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
-            <TabsContent value="results" className="space-y-4">
-              {results.length === 0 ? (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Sparkles className="w-12 h-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground text-center">
-                      Preencha o formulário e clique em "Gerar Copy" para ver os resultados aqui
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                results.map((result) => (
-                  <Card key={result.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline">{copyTypes.find((t) => t.value === result.type)?.label}</Badge>
-                        <div className="flex items-center space-x-2">
+          {/* Results Section */}
+          <div className="space-y-8">
+            <Tabs defaultValue="results" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 h-12">
+                <TabsTrigger value="results" className="text-base font-semibold">
+                  Resultados
+                </TabsTrigger>
+                <TabsTrigger value="history" className="text-base font-semibold">
+                  Histórico
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="results" className="space-y-4 mt-6">
+                {results.length === 0 ? (
+                  <Card className="shadow-lg">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-4">
+                        <Sparkles className="w-8 h-8 text-white" />
+                      </div>
+                      <p className="text-slate-600 text-center text-base">
+                        Preencha o formulário e clique em "Gerar Copy" para ver os resultados aqui
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  results.map((result, index) => (
+                    <Card key={result.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="font-semibold">
+                              {copyTypes.find((t) => t.value === result.type)?.label}
+                            </Badge>
+                            <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white">
+                              Versão {index + 1}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleLike(result.id)}
+                              className={`hover:bg-red-50 ${result.liked ? "text-red-500" : "text-slate-400"}`}
+                            >
+                              <Heart className={`w-4 h-4 ${result.liked ? "fill-current" : ""}`} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(result.content)}
+                              className="hover:bg-blue-50 text-slate-600 hover:text-blue-600"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="whitespace-pre-wrap text-base leading-relaxed text-slate-700 bg-slate-50 p-4 rounded-lg border">
+                          {result.content}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="history" className="space-y-4 mt-6">
+                {history.length === 0 ? (
+                  <Card className="shadow-lg">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <Clock className="w-16 h-16 text-slate-400 mb-4" />
+                      <p className="text-slate-600 text-center text-base">Seu histórico de copies aparecerá aqui</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  history.slice(0, 10).map((result) => (
+                    <Card key={result.id} className="shadow-lg hover:shadow-xl transition-shadow">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="font-semibold">
+                              {copyTypes.find((t) => t.value === result.type)?.label}
+                            </Badge>
+                            <span className="text-sm text-slate-500">{result.timestamp.toLocaleDateString()}</span>
+                          </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleLike(result.id)}
-                            className={result.liked ? "text-red-500" : ""}
+                            onClick={() => copyToClipboard(result.content)}
+                            className="hover:bg-blue-50 text-slate-600 hover:text-blue-600"
                           >
-                            <Heart className={`w-4 h-4 ${result.liked ? "fill-current" : ""}`} />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => copyToClipboard(result.content)}>
                             <Copy className="w-4 h-4" />
                           </Button>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="whitespace-pre-wrap text-sm">{result.content}</div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </TabsContent>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="whitespace-pre-wrap text-sm line-clamp-3 text-slate-700">{result.content}</div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </TabsContent>
+            </Tabs>
 
-            <TabsContent value="history" className="space-y-4">
-              {history.length === 0 ? (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Clock className="w-12 h-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground text-center">Seu histórico de copies aparecerá aqui</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                history.slice(0, 10).map((result) => (
-                  <Card key={result.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline">{copyTypes.find((t) => t.value === result.type)?.label}</Badge>
-                          <span className="text-xs text-muted-foreground">{result.timestamp.toLocaleDateString()}</span>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => copyToClipboard(result.content)}>
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="whitespace-pre-wrap text-sm line-clamp-3">{result.content}</div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </TabsContent>
-          </Tabs>
-
-          {/* Usage Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Uso Mensal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span>Copies geradas</span>
-                  <span>{user?.plan === "pro" ? "Ilimitado" : `${history.length}/100`}</span>
+            {/* Usage Stats */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold text-slate-900 flex items-center space-x-2">
+                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                  <span>Uso Mensal</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between text-base">
+                    <span className="font-medium text-slate-700">Copies geradas</span>
+                    <span className="font-bold text-slate-900">
+                      {user?.plan === "pro" ? "Ilimitado" : `${history.length}/100`}
+                    </span>
+                  </div>
+                  {user?.plan === "starter" && (
+                    <div className="w-full bg-slate-200 rounded-full h-3">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min((history.length / 100) * 100, 100)}%` }}
+                      />
+                    </div>
+                  )}
+                  {user?.plan === "starter" && history.length > 80 && (
+                    <div className="flex items-center space-x-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Considere fazer upgrade para Pro para copies ilimitadas</span>
+                    </div>
+                  )}
                 </div>
-                {user?.plan === "starter" && (
-                  <div className="w-full bg-secondary rounded-full h-2">
-                    <div
-                      className="bg-primary h-2 rounded-full"
-                      style={{ width: `${Math.min((history.length / 100) * 100, 100)}%` }}
-                    />
-                  </div>
-                )}
-                {user?.plan === "starter" && history.length > 80 && (
-                  <div className="flex items-center space-x-2 text-sm text-amber-600">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Considere fazer upgrade para Pro</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

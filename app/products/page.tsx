@@ -512,7 +512,9 @@ export default function ProductsPage() {
                   </div>
                 </div>
 
-                <Button className="w-full bg-accent hover:bg-accent/90">Gerar Copy para Este Produto</Button>
+                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                  Gerar Copy para Este Produto
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -573,7 +575,7 @@ export default function ProductsPage() {
                   <AlertCircle className="w-4 h-4 text-primary" />
                   <span>Alertas de oportunidades</span>
                 </div>
-                <Button size="sm" className="w-full bg-accent hover:bg-accent/90">
+                <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
                   Fazer Upgrade
                 </Button>
               </CardContent>
