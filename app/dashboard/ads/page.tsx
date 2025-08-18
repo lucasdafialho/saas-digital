@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -37,14 +37,15 @@ const objectives = ["Leads", "Conversão", "Reconhecimento", "Tráfego", "Vendas
 const platforms = ["Meta Ads", "Google Ads", "TikTok Ads", "YouTube", "LinkedIn Ads", "Auto"]
 
 export default function AdsPage() {
+  const resultsRef = useRef<HTMLDivElement | null>(null)
   const [form, setForm] = useState({
     product: "",
     offer: "",
     audience: "",
     objective: objectives[0],
     platform: platforms[0],
-    budget: "R$ 1000/mês",
-    timeframe: "30 dias",
+    budget: "1000",
+    timeframe: "30",
     region: "BR",
     context: "",
   })
@@ -59,7 +60,11 @@ export default function AdsPage() {
       const res = await fetch("/api/generate-ads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          budget: Number(form.budget || 0),
+          timeframe: Number(form.timeframe || 0),
+        }),
       })
       const text = await res.text()
       let data: any = null
@@ -70,11 +75,19 @@ export default function AdsPage() {
       }
       if (!res.ok || !data?.success) throw new Error(data?.error || `Falha (${res.status})`)
       setPlan(data.strategy as AdsPlan)
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }, 150)
     } catch (e) {
       console.error(e)
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  const handleNumeric = (key: "budget" | "timeframe") => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/[^0-9]/g, "")
+    setForm((p) => ({ ...p, [key]: digits }))
   }
 
   const copyCreatives = () => {
@@ -164,12 +177,18 @@ export default function AdsPage() {
                   </Select>
                 </div>
                 <div className="space-y-3">
-                  <Label>Orçamento</Label>
-                  <Input value={form.budget} onChange={(e) => setForm((p) => ({ ...p, budget: e.target.value }))} placeholder="Ex: R$ 300/dia" className="h-11" />
+                  <Label>Orçamento mensal (R$)</Label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</div>
+                    <Input type="text" inputMode="numeric" pattern="[0-9]*" value={form.budget} onChange={handleNumeric("budget")} placeholder="1000" className="h-11 pl-10" />
+                  </div>
                 </div>
                 <div className="space-y-3">
-                  <Label>Janela</Label>
-                  <Input value={form.timeframe} onChange={(e) => setForm((p) => ({ ...p, timeframe: e.target.value }))} placeholder="Ex: 14 dias" className="h-11" />
+                  <Label>Janela (dias)</Label>
+                  <div className="relative">
+                    <Input type="text" inputMode="numeric" pattern="[0-9]*" value={form.timeframe} onChange={handleNumeric("timeframe")} placeholder="30" className="h-11 pr-14" />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">dias</div>
+                  </div>
                 </div>
                 </div>
               </div>
@@ -203,6 +222,7 @@ export default function AdsPage() {
             </CardContent>
           </Card>
 
+          <div ref={resultsRef} />
           {plan ? (
             <div className="space-y-8">
               <Card>
@@ -325,8 +345,8 @@ export default function AdsPage() {
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">{form.objective}</Badge>
                 <Badge className="bg-primary/10 text-primary">{form.platform}</Badge>
-                <Badge variant="secondary"><Wallet className="w-3 h-3 mr-1" />{form.budget}</Badge>
-                <Badge variant="secondary">{form.timeframe}</Badge>
+                <Badge variant="secondary"><Wallet className="w-3 h-3 mr-1" />R$ {Number(form.budget || 0).toLocaleString("pt-BR")}/mês</Badge>
+                <Badge variant="secondary">{Number(form.timeframe || 0)} dias</Badge>
                 <Badge variant="outline"><MapPin className="w-3 h-3 mr-1" />{form.region || "BR"}</Badge>
               </div>
               <Separator />

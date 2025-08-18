@@ -47,10 +47,68 @@ export async function POST(request: NextRequest) {
         },
       ],
       generationConfig: {
-        temperature: 0.8,
+        temperature: 0.6,
         topP: 0.95,
         topK: 40,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 1500,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            funnelType: { type: "string" },
+            objective: { type: "string" },
+            summary: { type: "string" },
+            kpis: { type: "array", items: { type: "string" } },
+            stages: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  objective: { type: "string" },
+                  channels: { type: "array", items: { type: "string" } },
+                  actions: { type: "array", items: { type: "string" } },
+                  recommendations: { type: "array", items: { type: "string" } },
+                  kpis: { type: "array", items: { type: "string" } },
+                  copyGuidelines: { type: "array", items: { type: "string" } },
+                },
+                required: [
+                  "name",
+                  "objective",
+                  "channels",
+                  "actions",
+                  "recommendations",
+                  "kpis",
+                  "copyGuidelines",
+                ],
+              },
+            },
+            recommendedTools: { type: "array", items: { type: "string" } },
+            contentIdeas: { type: "array", items: { type: "string" } },
+            timeline: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  phase: { type: "string" },
+                  week: { type: "string" },
+                  focus: { type: "string" },
+                },
+                required: ["phase", "week", "focus"],
+              },
+            },
+          },
+          required: [
+            "funnelType",
+            "objective",
+            "summary",
+            "kpis",
+            "stages",
+            "recommendedTools",
+            "contentIdeas",
+            "timeline",
+          ],
+        },
       },
     }
 
@@ -158,19 +216,23 @@ function buildPrompt(s: {
     "timeline": [{ "phase": string, "week": string, "focus": string }]
   }`
 
-  const base = `Você é um estrategista de growth e funis de vendas em pt-BR. Gere um plano completo de funil baseado nos dados fornecidos. Público: ${s.audience}. Produto/serviço: ${s.product}. Oferta: ${s.offer}. Objetivo: ${s.objective}. Tipo de funil preferido: ${s.funnelType || "indefinido"}. Orçamento: ${s.budget || "indefinido"}. Janela de execução: ${s.timeframe || "indefinida"}. Contexto adicional: ${s.context}.
+  const base = `Você é um estrategista de growth e funis de vendas em pt-BR. Gere um plano completo de funil baseado nos dados fornecidos. Público: ${s.audience}. Produto/serviço: ${s.product}. Oferta: ${s.offer}. Objetivo: ${s.objective}. Tipo de funil preferido: ${s.funnelType || "indefinido"}. Orçamento (BRL): ${s.budget || "indefinido"}. Janela (dias): ${s.timeframe || "indefinida"}. Contexto adicional: ${s.context}.
 
-Responda apenas com JSON VÁLIDO correspondente ao schema a seguir, sem explicações, sem blocos de código, sem comentários e sem texto fora do JSON. O plano deve ser prático, acionável, com linguagem direta, e considerar boas práticas de performance e ética. Para cada etapa, inclua canais, ações objetivas, recomendações e KPIs. Não inclua promises ou linguagem vaga. Schema: ${schema}`
+Responda estritamente com JSON válido e nada mais, conforme o schema abaixo. Não use blocos de código ou comentários. Para cada etapa, inclua canais, ações objetivas, recomendações e KPIs. Schema: ${schema}`
 
   return base
 }
 
 function extractText(json: any): string {
   try {
-    const c = json?.candidates?.[0]?.content?.parts
-    if (Array.isArray(c)) {
-      const t = c.map((p: any) => p?.text || "").join("\n").trim()
-      return t
+    const parts = json?.candidates?.[0]?.content?.parts
+    if (Array.isArray(parts)) {
+      for (const part of parts) {
+        const txt = (part?.text ?? "").trim()
+        if (txt && (txt.startsWith("{") || txt.startsWith("["))) return txt
+      }
+      const joined = parts.map((p: any) => p?.text || "").join("\n").trim()
+      return joined
     }
     const t2 = json?.candidates?.[0]?.output_text
     return String(t2 || "").trim()
@@ -180,16 +242,17 @@ function extractText(json: any): string {
 }
 
 function extractJsonObject(source: string): any | null {
+  const cleaned = String(source || "").replace(/```[\s\S]*?```/g, (m) => m.replace(/```[a-zA-Z]*\n?|```/g, "")).trim()
+  // Model compliant path: often returns JSON already
   try {
-    const cleaned = source.replace(/```[a-zA-Z]*\n?|```/g, "").trim()
-    const start = cleaned.indexOf("{")
-    const end = cleaned.lastIndexOf("}")
-    if (start === -1 || end === -1) return null
-    const slice = cleaned.slice(start, end + 1)
-    return JSON.parse(slice)
-  } catch {
-    return null
-  }
+    return JSON.parse(cleaned)
+  } catch {}
+  // Some models wrap with leading text; try to locate the first JSON object
+  try {
+    const objMatch = cleaned.match(/\{[\s\S]*\}$/)
+    if (objMatch) return JSON.parse(objMatch[0])
+  } catch {}
+  return null
 }
 
 

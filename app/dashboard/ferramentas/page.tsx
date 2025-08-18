@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -52,6 +52,7 @@ const budgets = ["Baixo", "Médio", "Alto"]
 const timeframes = ["7 dias", "14 dias", "30 dias", "60 dias"]
 
 export default function AIToolsPage() {
+  const resultsRef = useRef<HTMLDivElement | null>(null)
   const [selectedType, setSelectedType] = useState<string>(funnelTypes[0])
   const [form, setForm] = useState({
     product: "",
@@ -93,6 +94,9 @@ export default function AIToolsPage() {
       }
       if (!res.ok || !payload?.success) throw new Error(payload?.error || `Falha (${res.status})`)
       setStrategy(payload.strategy as Strategy)
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }, 150)
     } catch (e) {
       console.error(e)
     } finally {
@@ -258,6 +262,7 @@ export default function AIToolsPage() {
             </CardContent>
           </Card>
 
+          <div ref={resultsRef} />
           {strategy ? (
             <div className="space-y-8">
               <Card className="bg-card">

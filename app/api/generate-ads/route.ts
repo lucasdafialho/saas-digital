@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
       audience,
       objective,
       platform: platform || "Auto",
-      budget: budget || "",
-      timeframe: timeframe || "",
+      budget: budget ?? "",
+      timeframe: timeframe ?? "",
       region: region || "",
       context: context || "",
     })
@@ -49,10 +49,76 @@ export async function POST(request: NextRequest) {
         },
       ],
       generationConfig: {
-        temperature: 0.8,
+        temperature: 0.6,
         topP: 0.95,
         topK: 40,
-        maxOutputTokens: 1200,
+        maxOutputTokens: 1500,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            objective: { type: "string" },
+            platforms: { type: "array", items: { type: "string" } },
+            budget: { type: "string" },
+            timeframe: { type: "string" },
+            strategySummary: { type: "string" },
+            kpis: { type: "array", items: { type: "string" } },
+            campaigns: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  goal: { type: "string" },
+                  budgetSplitPercent: { type: "number" },
+                  biddingStrategy: { type: "string" },
+                  audiences: { type: "array", items: { type: "string" } },
+                  placements: { type: "array", items: { type: "string" } },
+                  creatives: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        format: { type: "string" },
+                        headline: { type: "string" },
+                        description: { type: "string" },
+                        cta: { type: "string" },
+                        angle: { type: "string" },
+                      },
+                      required: ["format", "headline", "description", "cta", "angle"],
+                    },
+                  },
+                  recommendations: { type: "array", items: { type: "string" } },
+                },
+                required: [
+                  "name",
+                  "goal",
+                  "budgetSplitPercent",
+                  "biddingStrategy",
+                  "audiences",
+                  "placements",
+                  "creatives",
+                  "recommendations",
+                ],
+              },
+            },
+            testingPlan: { type: "array", items: { type: "string" } },
+            dailyRoutine: { type: "array", items: { type: "string" } },
+            optimizationTips: { type: "array", items: { type: "string" } },
+          },
+          required: [
+            "objective",
+            "platforms",
+            "budget",
+            "timeframe",
+            "strategySummary",
+            "kpis",
+            "campaigns",
+            "testingPlan",
+            "dailyRoutine",
+            "optimizationTips",
+          ],
+        },
       },
     }
 
@@ -104,8 +170,8 @@ function sanitize(input: {
   audience: string
   objective: string
   platform: string
-  budget: string
-  timeframe: string
+  budget: string | number
+  timeframe: string | number
   region: string
   context: string
 }) {
@@ -124,8 +190,8 @@ function sanitize(input: {
     audience: norm(input.audience),
     objective: norm(input.objective),
     platform: norm(input.platform),
-    budget: norm(input.budget),
-    timeframe: norm(input.timeframe),
+    budget: norm(String(input.budget)),
+    timeframe: norm(String(input.timeframe)),
     region: norm(input.region),
     context: norm(input.context),
   }
@@ -168,10 +234,10 @@ function buildPrompt(s: {
     "optimizationTips": string[]
   }`
 
-  const base = `Você é um media buyer sênior em pt-BR. Gere uma estratégia de tráfego pago orientada a resultados para ${s.platform} com base nos dados.
-Produto/serviço: ${s.product}. Oferta: ${s.offer}. Público: ${s.audience}. Objetivo: ${s.objective}. Orçamento: ${s.budget || "indefinido"}. Janela: ${s.timeframe || "indefinida"}. Região/idioma: ${s.region || "BR"}. Contexto adicional: ${s.context}.
+  const base = `Você é um media buyer sênior em pt-BR. Gere uma estratégia de tráfego pago orientada a resultados para ${s.platform}.
+Produto/serviço: ${s.product}. Oferta: ${s.offer}. Público: ${s.audience}. Objetivo: ${s.objective}. Orçamento mensal em BRL: ${s.budget || "indefinido"}. Janela (dias): ${s.timeframe || "indefinida"}. Região/idioma: ${s.region || "BR"}. Contexto: ${s.context}.
 
-Responda apenas com JSON VÁLIDO no schema abaixo. Forneça nomes de campanhas claros, divisões de orçamento, estratégia de lances, sugestões de público e posicionamentos. Gere no mínimo 3 criativos com headline, description e CTA por campanha, com ângulos distintos. Inclua plano de testes, rotina diária e dicas de otimização. Não escreva nada fora do JSON. Schema: ${schema}`
+Responda estritamente com JSON válido no schema abaixo. Use chaves duplas em todas as propriedades e strings. Não inclua comentários, blocos de código ou texto fora do JSON. Crie no mínimo 3 criativos por campanha com "headline", "description" e "cta". Schema: ${schema}`
 
   return base
 }
@@ -191,16 +257,42 @@ function extractText(json: any): string {
 }
 
 function extractJsonObject(source: string): any | null {
+  const cleaned = String(source || "").replace(/```[\s\S]*?```/g, (m) => m.replace(/```[a-zA-Z]*\n?|```/g, "")).trim()
   try {
-    const cleaned = source.replace(/```[a-zA-Z]*\n?|```/g, "").trim()
-    const start = cleaned.indexOf("{")
-    const end = cleaned.lastIndexOf("}")
-    if (start === -1 || end === -1) return null
-    const slice = cleaned.slice(start, end + 1)
-    return JSON.parse(slice)
-  } catch {
-    return null
-  }
+    return JSON.parse(cleaned)
+  } catch {}
+  try {
+    let start = -1
+    let depth = 0
+    let inString = false
+    let quote: string | null = null
+    let prev = ""
+    for (let i = 0; i < cleaned.length; i++) {
+      const ch = cleaned[i]
+      if (inString) {
+        if (ch === quote && prev !== "\\") inString = false
+      } else {
+        if (ch === '"' || ch === "'") {
+          inString = true
+          quote = ch
+        } else if (ch === "{") {
+          if (depth === 0) start = i
+          depth++
+        } else if (ch === "}") {
+          depth--
+          if (depth === 0 && start !== -1) {
+            const slice = cleaned.slice(start, i + 1)
+            try {
+              return JSON.parse(slice)
+            } catch {}
+            start = -1
+          }
+        }
+      }
+      prev = ch
+    }
+  } catch {}
+  return null
 }
 
 
