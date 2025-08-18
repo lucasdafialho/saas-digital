@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Brain, BarChart3, Shield, Users, Zap } from "lucide-react"
+import { CheckCircle, Brain, BarChart3, Shield, Users, Zap, ShoppingCart, Megaphone, BookOpen, FileText } from "lucide-react"
 import Link from "next/link"
 import { ScrollAnimate } from "@/components/scroll-animate"
 
@@ -86,6 +86,199 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section id="solutions" className="py-24 px-6" data-animate>
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Soluções</h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Soluções completas para cada etapa do funil: atração, conversão e retenção.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
+              <CardHeader className="pb-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <Megaphone className="w-7 h-7 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Aquisição de Tráfego</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Campanhas e conteúdos que atraem o público certo com ROI previsível.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Anúncios otimizados</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>SEO e conteúdos</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Parcerias estratégicas</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
+              <CardHeader className="pb-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <ShoppingCart className="w-7 h-7 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Conversão e Vendas</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Páginas e mensagens que convertem visitantes em clientes com eficiência.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Copy orientada à conversão</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Testes A/B</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Checkout otimizado</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
+              <CardHeader className="pb-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <Users className="w-7 h-7 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Relacionamento e Retenção</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Aumente LTV com relacionamento contínuo e jornadas automatizadas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>CRM e automações</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Fluxos de e-mail</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Programas de fidelidade</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      <section id="resources" className="py-24 px-6 bg-muted/20" data-animate>
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Recursos</h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Materiais para você aprender, implementar e escalar resultados.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
+              <CardHeader className="pb-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <BookOpen className="w-7 h-7 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Guias e Playbooks</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Passo a passo para campanhas, lançamentos e otimização contínua.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Templates prontos</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Checklist de execução</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Métricas de sucesso</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
+              <CardHeader className="pb-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <BarChart3 className="w-7 h-7 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Templates e Análise de Mercado</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Modelos prontos e insights de mercado para decidir com dados.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Estudo de nichos</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Análise de sazonalidade</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Templates operacionais</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
+              <CardHeader className="pb-4">
+                <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
+                  <FileText className="w-7 h-7 text-primary" />
+                </div>
+                <CardTitle className="text-xl mb-2">Documentação</CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Referência completa de recursos, integrações e boas práticas.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-3 text-sm">
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Integrações</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Exemplos de uso</span>
+                  </li>
+                  <li className="flex items-center space-x-3">
+                    <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span>Guia de estilos</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
       <section id="platform" className="py-24 px-6 bg-muted/20" data-animate>
         <div className="container mx-auto max-w-7xl">
           <div className="text-center mb-20">
