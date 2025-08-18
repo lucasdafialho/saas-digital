@@ -13,37 +13,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X } from "lucide-react"
+import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, BookOpen, Wand2, ChevronDown, Layers3, Megaphone } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 
-const navigation = [
+type NavEntry =
+  | { type: "item"; name: string; href: string; icon: any }
+  | { type: "group"; name: string; icon: any; items: { name: string; href: string; icon: any }[] }
+
+const navigation: NavEntry[] = [
+  { type: "item", name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   {
-    name: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
+    type: "group",
+    name: "IA MarketPro",
+    icon: Wand2,
+    items: [
+      { name: "Gerador de Copy", href: "/dashboard/copy-generator", icon: Zap },
+      { name: "Funis de Vendas", href: "/dashboard/ferramentas", icon: Layers3 },
+      { name: "Estratégias de Ads", href: "/dashboard/ads", icon: Megaphone },
+    ],
   },
-  {
-    name: "Gerador de Copy",
-    href: "/dashboard/copy-generator", // Updated path to dashboard structure
-    icon: Zap,
-  },
-  {
-    name: "Produtos Nichados",
-    href: "/dashboard/products", // Updated path to dashboard structure
-    icon: Target,
-  },
-  {
-    name: "Analytics",
-    href: "/dashboard/analytics", // Updated to dashboard structure
-    icon: BarChart3,
-  },
-  {
-    name: "Configurações",
-    href: "/dashboard/configuracoes", // Updated to dashboard structure
-    icon: Settings,
-  },
+  { type: "item", name: "Produtos Nichados", href: "/dashboard/products", icon: Target },
+  { type: "item", name: "Conteúdos", href: "/dashboard/conteudos", icon: BookOpen },
+  { type: "item", name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { type: "item", name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ]
 
 export default function DashboardLayout({
@@ -55,6 +49,7 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
   const handleLogout = () => {
     logout()
@@ -93,23 +88,74 @@ export default function DashboardLayout({
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
+            {navigation.map((entry) => {
+              if (entry.type === "item") {
+                const Icon = entry.icon
+                const isActive = pathname === entry.href
+                return (
+                  <Link
+                    key={entry.name}
+                    href={entry.href}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{entry.name}</span>
+                  </Link>
+                )
+              }
+
+              const Icon = entry.icon
+              const isGroupActive = entry.items.some((it) => pathname.startsWith(it.href))
+              const isOpen = openGroups[entry.name] ?? isGroupActive
+
               return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.name}</span>
-                </Link>
+                <div key={entry.name} className="space-y-1">
+                  <button
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      isGroupActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                    onClick={() => setOpenGroups((prev) => ({ ...prev, [entry.name]: !isOpen }))}
+                    aria-expanded={isOpen}
+                  >
+                    <span className="flex items-center space-x-3">
+                      <Icon className="w-4 h-4" />
+                      <span>{entry.name}</span>
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  <div className={`grid transition-all duration-200 ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                    <div className="overflow-hidden">
+                      <div className="pl-8 space-y-1 py-1">
+                        {entry.items.map((child) => {
+                          const CIcon = child.icon
+                          const active = pathname === child.href
+                          return (
+                            <Link
+                              key={child.name}
+                              href={child.href}
+                              className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                                active
+                                  ? "bg-primary text-primary-foreground"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                            >
+                              <CIcon className="w-4 h-4" />
+                              <span>{child.name}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )
             })}
           </nav>
