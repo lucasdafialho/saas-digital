@@ -96,7 +96,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300" data-animate>
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                   <Brain className="w-7 h-7 text-primary" />
@@ -125,7 +125,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300" data-animate>
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                   <BarChart3 className="w-7 h-7 text-primary" />
@@ -153,7 +153,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border border-border bg-card hover:shadow-lg transition-all duration-300" data-animate>
+            <Card className="border border-border bg-card transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 bg-primary/10 rounded-lg flex items-center justify-center mb-6">
                   <Zap className="w-7 h-7 text-primary" />
@@ -194,7 +194,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="border-2 border-border" data-animate>
+            <Card className="border-2 border-border transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
               <CardHeader className="pb-6">
                 <CardTitle className="text-2xl mb-2">Starter</CardTitle>
                 <CardDescription className="text-base">Para empreendedores iniciantes</CardDescription>
@@ -227,7 +227,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-primary relative" data-animate>
+            <Card className="border-2 border-primary relative transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl" data-animate>
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-primary text-primary-foreground px-4 py-1">Mais Popular</Badge>
               </div>
