@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
-const FALLBACK_MODEL = "gemini-1.5-flash"
+const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 
 export async function POST(request: NextRequest) {
   try {
