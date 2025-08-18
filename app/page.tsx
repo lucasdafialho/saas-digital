@@ -34,10 +34,10 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="default" asChild>
+            <Button variant="ghost" size="default" className="transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
-            <Button size="default" asChild>
+            <Button size="default" className="transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
               <Link href="/register">Get started</Link>
             </Button>
           </div>
@@ -61,10 +61,10 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
-            <Button size="lg" className="text-lg px-10 py-4" asChild>
+            <Button size="lg" className="text-lg px-10 py-4 transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
               <Link href="/register">Start free</Link>
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-10 py-4 bg-transparent">
+            <Button variant="outline" size="lg" className="text-lg px-10 py-4 bg-transparent transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5">
               View demo
             </Button>
           </div>
@@ -221,7 +221,7 @@ export default function LandingPage() {
                     <span>Suporte por e-mail</span>
                   </li>
                 </ul>
-                <Button className="w-full bg-transparent" variant="outline" asChild>
+                <Button className="w-full bg-transparent transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" variant="outline" asChild>
                   <Link href="/register">Start free</Link>
                 </Button>
               </CardContent>
@@ -261,7 +261,7 @@ export default function LandingPage() {
                     <span>Templates exclusivos</span>
                   </li>
                 </ul>
-                <Button className="w-full" asChild>
+                <Button className="w-full transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
                   <Link href="/register">Get started</Link>
                 </Button>
               </CardContent>
@@ -272,18 +272,18 @@ export default function LandingPage() {
 
       <section className="py-24 px-6 bg-primary text-primary-foreground" data-animate>
         <div className="container mx-auto text-center max-w-4xl">
-          <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Ready to sell more?</h2>
+          <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Pronto para vender mais?</h2>
           <p className="text-xl mb-12 opacity-90 leading-relaxed">
-            Join thousands of entrepreneurs already using MarketPro to boost online sales.
+            Junte-se a milhares de empreendedores que já usam a MarketPro para impulsionar as vendas online.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <Button size="lg" variant="secondary" className="text-lg px-10 py-4" asChild>
+            <Button size="lg" variant="secondary" className="text-lg px-10 py-4 transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
               <Link href="/register">Start free</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
-              className="text-lg px-10 py-4 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent"
+              className="text-lg px-10 py-4 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5"
             >
               View demo
             </Button>
@@ -340,16 +340,7 @@ export default function LandingPage() {
                     Sobre Nós
                   </a>
                 </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Carreiras
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Imprensa
-                  </a>
-                </li>
+                
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">
                     Segurança
