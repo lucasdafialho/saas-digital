@@ -65,6 +65,7 @@ export default function AIToolsPage() {
   })
   const [isGenerating, setIsGenerating] = useState(false)
   const [strategy, setStrategy] = useState<Strategy | null>(null)
+  const [copiedPlan, setCopiedPlan] = useState(false)
 
   const handleGenerate = async () => {
     if (!form.product || !form.audience || !form.offer) return
@@ -121,6 +122,8 @@ export default function AIToolsPage() {
       lines.push("")
     })
     navigator.clipboard.writeText(lines.join("\n"))
+    setCopiedPlan(true)
+    setTimeout(() => setCopiedPlan(false), 1500)
   }
 
   return (
@@ -372,7 +375,7 @@ export default function AIToolsPage() {
               <div className="flex gap-3">
                 <Button variant="outline" onClick={copyPlan}>
                   <Copy className="w-4 h-4" />
-                  Copiar plano
+                  {copiedPlan ? "Copiado!" : "Copiar plano"}
                 </Button>
               </div>
             </div>

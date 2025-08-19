@@ -32,6 +32,7 @@ const navigation: NavEntry[] = [
       { name: "Gerador de Copy", href: "/dashboard/copy-generator", icon: Zap },
       { name: "Funis de Vendas", href: "/dashboard/ferramentas", icon: Layers3 },
       { name: "Estratégias de Ads", href: "/dashboard/ads", icon: Megaphone },
+      { name: "Marketing Model Canvas", href: "/dashboard/canvas", icon: Layers3 },
     ],
   },
   { type: "item", name: "Produtos Nichados", href: "/dashboard/products", icon: Target },

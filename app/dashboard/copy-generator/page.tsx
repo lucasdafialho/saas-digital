@@ -99,6 +99,7 @@ export default function CopyGeneratorPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [results, setResults] = useState<CopyResult[]>([])
   const [history, setHistory] = useState<CopyResult[]>([])
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const handleGenerate = async () => {
     if (!formData.product || !formData.audience || !formData.benefit) {
@@ -417,10 +418,15 @@ export default function CopyGeneratorPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => copyToClipboard(result.content)}
+                              onClick={() => {
+                                copyToClipboard(result.content)
+                                setCopiedId(result.id)
+                                setTimeout(() => setCopiedId(null), 1500)
+                              }}
                               className="hover:bg-accent text-muted-foreground hover:text-foreground"
                             >
                               <Copy className="w-4 h-4" />
+                              <span className="ml-1 text-xs">{copiedId === result.id ? "Copiado!" : ""}</span>
                             </Button>
                           </div>
                         </div>
@@ -457,10 +463,15 @@ export default function CopyGeneratorPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => copyToClipboard(result.content)}
+                            onClick={() => {
+                              copyToClipboard(result.content)
+                              setCopiedId(result.id)
+                              setTimeout(() => setCopiedId(null), 1500)
+                            }}
                             className="hover:bg-accent text-muted-foreground hover:text-foreground"
                           >
                             <Copy className="w-4 h-4" />
+                            <span className="ml-1 text-xs">{copiedId === result.id ? "Copiado!" : ""}</span>
                           </Button>
                         </div>
                       </CardHeader>

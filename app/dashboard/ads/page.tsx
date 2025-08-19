@@ -51,6 +51,7 @@ export default function AdsPage() {
   })
   const [isGenerating, setIsGenerating] = useState(false)
   const [plan, setPlan] = useState<AdsPlan | null>(null)
+  const [copiedCreatives, setCopiedCreatives] = useState(false)
 
   const handleGenerate = async () => {
     if (!form.product || !form.offer || !form.audience) return
@@ -104,6 +105,8 @@ export default function AdsPage() {
       })
     })
     navigator.clipboard.writeText(lines.join("\n"))
+    setCopiedCreatives(true)
+    setTimeout(() => setCopiedCreatives(false), 1500)
   }
 
   return (
@@ -322,7 +325,7 @@ export default function AdsPage() {
               <div className="flex gap-3">
                 <Button variant="outline" onClick={copyCreatives}>
                   <Copy className="w-4 h-4" />
-                  Copiar criativos
+                  {copiedCreatives ? "Copiado!" : "Copiar criativos"}
                 </Button>
               </div>
             </div>
