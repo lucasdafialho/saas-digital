@@ -80,10 +80,8 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center space-x-2 mb-8">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <span className="text-2xl font-bold">MarketPro</span>
+          <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="h-10 w-auto" />
+          <span className="text-2xl font-bold">Konvexy</span>
         </div>
 
         <Card className="border-0 shadow-xl">
@@ -266,7 +264,7 @@ export default function RegisterPage() {
               </CardHeader>
               <CardContent className="max-h-[70vh] overflow-y-auto space-y-4 text-sm leading-relaxed text-muted-foreground">
                 <h3 className="text-foreground font-semibold">1. Aceitação dos Termos</h3>
-                <p>Ao criar uma conta e utilizar a MarketPro, você concorda integralmente com estes Termos de Uso. Caso não concorde com qualquer condição, não utilize a plataforma.</p>
+                <p>Ao criar uma conta e utilizar a Konvexy, você concorda integralmente com estes Termos de Uso. Caso não concorde com qualquer condição, não utilize a plataforma.</p>
                 <h3 className="text-foreground font-semibold">2. Cadastro e Conta</h3>
                 <p>Para acessar os recursos, você deve fornecer informações verdadeiras, precisas e atualizadas. Você é responsável por manter a confidencialidade de suas credenciais e por todas as atividades realizadas em sua conta.</p>
                 <h3 className="text-foreground font-semibold">3. Uso Permitido</h3>
@@ -274,11 +272,11 @@ export default function RegisterPage() {
                 <h3 className="text-foreground font-semibold">4. Planos, Pagamentos e Cancelamento</h3>
                 <p>Planos pagos, quando oferecidos, podem ser cobrados de forma recorrente. Cancelamentos interrompem cobranças futuras, mantendo o acesso até o fim do ciclo vigente. Valores e benefícios podem ser alterados com aviso prévio.</p>
                 <h3 className="text-foreground font-semibold">5. Propriedade Intelectual</h3>
-                <p>Todo o conteúdo, marca, layout e tecnologia da MarketPro pertencem à empresa ou a seus licenciadores. É vedada a reprodução, distribuição ou criação de obras derivadas sem autorização.</p>
+                <p>Todo o conteúdo, marca, layout e tecnologia da Konvexy pertencem à empresa ou a seus licenciadores. É vedada a reprodução, distribuição ou criação de obras derivadas sem autorização.</p>
                 <h3 className="text-foreground font-semibold">6. Conteúdos Gerados por IA</h3>
                 <p>Os textos e sugestões gerados por inteligência artificial são fornecidos no estado em que se encontram. Você é responsável por revisar, adaptar e garantir que estejam em conformidade com as leis e com sua finalidade de uso.</p>
                 <h3 className="text-foreground font-semibold">7. Limitação de Responsabilidade</h3>
-                <p>Na máxima extensão permitida por lei, a MarketPro não se responsabiliza por lucros cessantes, danos indiretos, perda de dados ou indisponibilidade ocasionais. Empregamos boas práticas para manter a continuidade e segurança do serviço.</p>
+                <p>Na máxima extensão permitida por lei, a Konvexy não se responsabiliza por lucros cessantes, danos indiretos, perda de dados ou indisponibilidade ocasionais. Empregamos boas práticas para manter a continuidade e segurança do serviço.</p>
                 <h3 className="text-foreground font-semibold">8. Suspensão e Encerramento</h3>
                 <p>Podemos suspender ou encerrar contas que violem estes Termos, leis ou políticas internas. Você pode encerrar sua conta a qualquer momento, observadas as obrigações pendentes.</p>
                 <h3 className="text-foreground font-semibold">9. Privacidade</h3>
@@ -309,7 +307,7 @@ export default function RegisterPage() {
               </CardHeader>
               <CardContent className="max-h-[70vh] overflow-y-auto space-y-4 text-sm leading-relaxed text-muted-foreground">
                 <h3 className="text-foreground font-semibold">1. Introdução</h3>
-                <p>Esta Política de Privacidade descreve como a MarketPro coleta, utiliza e protege seus dados pessoais de acordo com a legislação aplicável, incluindo a Lei Geral de Proteção de Dados (LGPD).</p>
+                <p>Esta Política de Privacidade descreve como a Konvexy coleta, utiliza e protege seus dados pessoais de acordo com a legislação aplicável, incluindo a Lei Geral de Proteção de Dados (LGPD).</p>
                 <h3 className="text-foreground font-semibold">2. Dados que Coletamos</h3>
                 <ul className="list-disc pl-5 space-y-2">
                   <li>Dados de cadastro: nome, e-mail, senha e informações de contato.</li>

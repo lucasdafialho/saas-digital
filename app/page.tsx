@@ -10,12 +10,9 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       <ScrollAnimate />
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
-              <div className="w-6 h-6 bg-primary-foreground rounded-sm"></div>
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-foreground">MarketPro</span>
+        <div className="px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center">
+            <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="h-10 w-auto" />
           </div>
 
           <nav className="hidden md:flex items-center space-x-8">
@@ -44,16 +41,18 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="py-24 px-6" data-animate>
+      <section className="py-24 px-6 mb-16" data-animate>
         <div className="container mx-auto text-center max-w-5xl">
-          <Badge variant="secondary" className="mb-8 px-4 py-2 text-sm font-medium">
-            Plataforma de Marketing Digital com IA
-          </Badge>
+          <div className="mb-6 flex justify-center">
+            <img src="/konvexy/Konvexy Escrito PNG.png" alt="Konvexy" className="h-20 md:h-24" />
+          </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight tracking-tight">
             Transforme Seu Marketing
             <span className="text-primary block">Com Inteligência Artificial</span>
           </h1>
+
+
 
           <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
             Plataforma completa de marketing digital que combina geração de copy por IA com análise de produtos nichados
@@ -467,7 +466,7 @@ export default function LandingPage() {
         <div className="container mx-auto text-center max-w-4xl">
           <h2 className="text-4xl md:text-5xl font-bold mb-8 tracking-tight">Pronto para vender mais?</h2>
           <p className="text-xl mb-12 opacity-90 leading-relaxed">
-            Junte-se a milhares de empreendedores que já usam a MarketPro para impulsionar as vendas online.
+            Junte-se a milhares de empreendedores que já usam a Konvexy para impulsionar as vendas online.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Button size="lg" variant="secondary" className="text-lg px-10 py-4 transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
@@ -489,10 +488,10 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-12">
             <div>
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center">
-                  <div className="w-6 h-6 bg-primary-foreground rounded-sm"></div>
-                </div>
-                <span className="text-2xl font-bold tracking-tight">MarketPro</span>
+              <div className="w-10 h-10 rounded-sm flex items-center justify-center">
+                <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="w-10 h-10" />
+              </div>
+              <span className="text-2xl font-bold tracking-tight">Konvexy</span>
               </div>
               <p className="text-muted-foreground leading-relaxed">
                 Plataforma completa de marketing digital para empreendedores que querem vender mais.
@@ -570,7 +569,7 @@ export default function LandingPage() {
           </div>
 
           <div className="border-t mt-12 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 MarketPro. Todos os direitos reservados. Plataforma de marketing digital.</p>
+            <p>&copy; 2024 Konvexy. Todos os direitos reservados. Plataforma de marketing digital.</p>
           </div>
         </div>
       </footer>

@@ -212,7 +212,7 @@ export default function ProductsPage() {
       case "medium":
         return "text-yellow-600 bg-yellow-50"
       case "high":
-        return "text-red-600 bg-red-50"
+        return "text-rose-600 bg-rose-50"
       default:
         return "text-gray-600 bg-gray-50"
     }
@@ -238,7 +238,7 @@ export default function ProductsPage() {
       case "up":
         return <TrendingUp className="w-4 h-4 text-green-500" />
       case "down":
-        return <TrendingDown className="w-4 h-4 text-red-500" />
+        return <TrendingDown className="w-4 h-4 text-rose-500" />
       default:
         return <BarChart3 className="w-4 h-4 text-gray-500" />
     }
@@ -389,7 +389,7 @@ export default function ProductsPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleFavorite(product.id)}
-                        className={favorites.includes(product.id) ? "text-red-500" : ""}
+                        className={favorites.includes(product.id) ? "text-rose-500" : ""}
                       >
                         <Heart className={`w-4 h-4 ${favorites.includes(product.id) ? "fill-current" : ""}`} />
                       </Button>

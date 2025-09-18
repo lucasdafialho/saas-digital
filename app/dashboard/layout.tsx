@@ -26,7 +26,7 @@ const navigation: NavEntry[] = [
   { type: "item", name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   {
     type: "group",
-    name: "IA MarketPro",
+    name: "IA Konvexy",
     icon: Wand2,
     items: [
       { name: "Gerador de Copy", href: "/dashboard/copy-generator", icon: Zap },
@@ -77,10 +77,8 @@ export default function DashboardLayout({
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-6 border-b">
             <Link href="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-foreground">MarketPro</span>
+              <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="h-8 w-auto" />
+              <span className="text-xl font-bold text-foreground">Konvexy</span>
             </Link>
             <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
               <X className="w-4 h-4" />

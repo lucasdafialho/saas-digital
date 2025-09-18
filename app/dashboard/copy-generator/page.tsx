@@ -40,7 +40,7 @@ const copyTypes = [
     label: "Headlines",
     icon: Megaphone,
     description: "Títulos que chamam atenção",
-    color: "bg-red-500",
+    color: "bg-primary",
   },
   { value: "email", label: "E-mails de Vendas", icon: Mail, description: "E-mails persuasivos", color: "bg-primary" },
   {
@@ -411,7 +411,7 @@ export default function CopyGeneratorPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => toggleLike(result.id)}
-                              className={`hover:bg-accent ${result.liked ? "text-red-500" : "text-muted-foreground"}`}
+                              className={`hover:bg-accent ${result.liked ? "text-rose-500" : "text-muted-foreground"}`}
                             >
                               <Heart className={`w-4 h-4 ${result.liked ? "fill-current" : ""}`} />
                             </Button>
