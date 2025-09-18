@@ -10,12 +10,12 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       <ScrollAnimate />
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center">
+        <div className="px-6 h-20 grid grid-cols-3 items-center">
+          <div className="flex items-center justify-start">
             <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="h-10 w-auto" />
           </div>
 
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center justify-center space-x-8">
             <a href="#platform" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Plataforma
             </a>
@@ -30,7 +30,7 @@ export default function LandingPage() {
             </a>
           </nav>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-end space-x-4">
             <Button variant="ghost" size="default" className="transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
               <Link href="/login">Sign in</Link>
             </Button>
