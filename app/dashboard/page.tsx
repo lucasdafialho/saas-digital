@@ -30,6 +30,7 @@ export default function DashboardPage() {
       changeType: "positive" as const,
       icon: Zap,
       color: "bg-primary",
+      comingSoon: false,
     },
     {
       title: "Taxa de Conversão",
@@ -37,7 +38,8 @@ export default function DashboardPage() {
       change: "+0.8%",
       changeType: "positive" as const,
       icon: TrendingUp,
-      color: "bg-primary",
+      color: "bg-muted",
+      comingSoon: true,
     },
     {
       title: "Produtos Analisados",
@@ -46,6 +48,7 @@ export default function DashboardPage() {
       changeType: "positive" as const,
       icon: Target,
       color: "bg-primary",
+      comingSoon: false,
     },
     {
       title: "ROI Médio",
@@ -53,7 +56,8 @@ export default function DashboardPage() {
       change: "+23%",
       changeType: "positive" as const,
       icon: DollarSign,
-      color: "bg-primary",
+      color: "bg-muted",
+      comingSoon: true,
     },
   ]
 
@@ -107,11 +111,11 @@ export default function DashboardPage() {
     },
     {
       title: "Ver Analytics",
-      description: "Acompanhe suas métricas",
+      description: "Em breve",
       icon: BarChart3,
-      href: "/analytics",
-      color: "bg-primary",
-      textColor: "text-white",
+      href: "/dashboard/analytics",
+      color: "bg-muted",
+      textColor: "text-muted-foreground",
     },
   ]
 
@@ -188,16 +192,28 @@ export default function DashboardPage() {
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
                 <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <Icon className="h-5 w-5 text-white" />
+                  <Icon className={`h-5 w-5 ${stat.comingSoon ? 'text-muted-foreground' : 'text-white'}`} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
-                <div className="flex items-center space-x-1 text-sm">
-                  <ArrowUpRight className="h-4 w-4 text-primary" />
-                  <span className="text-primary font-semibold">{stat.change}</span>
-                  <span className="text-muted-foreground">vs mês anterior</span>
-                </div>
+                {stat.comingSoon ? (
+                  <>
+                    <div className="text-2xl font-bold text-muted-foreground mb-2">Em breve</div>
+                    <div className="flex items-center space-x-1 text-sm">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Requer integração</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
+                    <div className="flex items-center space-x-1 text-sm">
+                      <ArrowUpRight className="h-4 w-4 text-primary" />
+                      <span className="text-primary font-semibold">{stat.change}</span>
+                      <span className="text-muted-foreground">vs mês anterior</span>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           )

@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, BookOpen, Wand2, ChevronDown, Layers3, Megaphone } from "lucide-react"
+import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
@@ -36,7 +36,6 @@ const navigation: NavEntry[] = [
     ],
   },
   { type: "item", name: "Produtos Nichados", href: "/dashboard/products", icon: Target },
-  { type: "item", name: "Conteúdos", href: "/dashboard/conteudos", icon: BookOpen },
   { type: "item", name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { type: "item", name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ]
@@ -76,9 +75,8 @@ export default function DashboardLayout({
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-6 border-b">
-            <Link href="/dashboard" className="flex items-center space-x-2">
-              <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="h-8 w-auto" />
-              <span className="text-xl font-bold text-foreground">Konvexy</span>
+            <Link href="/dashboard" className="flex items-center">
+              <img src="/konvexy/Konvexy + Logo.png" alt="Konvexy" className="h-25 w-auto" />
             </Link>
             <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
               <X className="w-4 h-4" />

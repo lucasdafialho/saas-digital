@@ -45,9 +45,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="flex items-center justify-center space-x-2 mb-8">
-          <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="h-10 w-auto" />
-          <span className="text-2xl font-bold">Konvexy</span>
+        <div className="flex items-center justify-center mb-8">
+          <img src="/konvexy/Konvexy + Logo.png" alt="Konvexy" className="h-36 w-auto" />
         </div>
 
         <Card className="border-0 shadow-xl">
@@ -68,7 +67,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="seu@email.com"
+                  placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
