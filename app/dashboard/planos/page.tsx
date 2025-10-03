@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,12 +9,31 @@ import { useAuth } from "@/hooks/use-auth"
 import { PLANS } from "@/lib/mercadopago"
 import { useSearchParams, useRouter } from "next/navigation"
 
+function SearchParamsEffect({ onPaymentApproved, onSubscriptionSuccess }: { onPaymentApproved: (paymentId: string) => void; onSubscriptionSuccess: () => void }) {
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const subscriptionSuccess = searchParams.get("subscription")
+    const paymentId = searchParams.get("payment_id")
+    const paymentStatus = searchParams.get("status")
+
+    if (paymentId && paymentStatus === "approved") {
+      onPaymentApproved(paymentId)
+    }
+
+    if (subscriptionSuccess === "success") {
+      onSubscriptionSuccess()
+    }
+  }, [searchParams, onPaymentApproved, onSubscriptionSuccess])
+
+  return null
+}
+
 export default function PlanosPage() {
   const { user, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [isNewUser, setIsNewUser] = useState(false)
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -22,50 +41,31 @@ export default function PlanosPage() {
     }
   }, [user, authLoading, router])
 
-  useEffect(() => {
-    const subscriptionSuccess = searchParams.get("subscription")
-    const paymentId = searchParams.get("payment_id")
-    const paymentStatus = searchParams.get("status")
-
-    // Verificar retorno de pagamento do Checkout Pro
-    if (paymentId && paymentStatus === "approved") {
-      const checkPayment = async () => {
-        try {
-          const response = await fetch(`/api/mercadopago/check-payment?payment_id=${paymentId}`)
-          if (response.ok) {
-            const data = await response.json()
-            console.log("Pagamento verificado:", data)
-            
-            if (data.status === "approved") {
-              setIsNewUser(true)
-              // Atualizar plano do usuário no localStorage
-              const userData = localStorage.getItem("marketpro_user")
-              if (userData) {
-                const user = JSON.parse(userData)
-                user.plan = data.planType
-                localStorage.setItem("marketpro_user", JSON.stringify(user))
-              }
-              
-              setTimeout(() => {
-                window.location.href = "/dashboard?payment=success"
-              }, 2000)
-            }
+  const handlePaymentApproved = async (paymentId: string) => {
+    try {
+      const response = await fetch(`/api/mercadopago/check-payment?payment_id=${paymentId}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.status === "approved") {
+          setIsNewUser(true)
+          const userData = localStorage.getItem("marketpro_user")
+          if (userData) {
+            const user = JSON.parse(userData)
+            user.plan = data.planType
+            localStorage.setItem("marketpro_user", JSON.stringify(user))
           }
-        } catch (error) {
-          console.error("Erro ao verificar pagamento:", error)
+          setTimeout(() => { window.location.href = "/dashboard?payment=success" }, 2000)
         }
       }
-      checkPayment()
+    } catch (error) {
+      console.error("Erro ao verificar pagamento:", error)
     }
+  }
 
-    // Verificar retorno de assinatura
-    if (subscriptionSuccess === "success") {
-      setIsNewUser(true)
-      setTimeout(() => {
-        window.location.href = "/dashboard?subscription=success"
-      }, 2000)
-    }
-  }, [searchParams])
+  const handleSubscriptionSuccess = () => {
+    setIsNewUser(true)
+    setTimeout(() => { window.location.href = "/dashboard?subscription=success" }, 2000)
+  }
 
   const handleSelectPlan = async (planType: "starter" | "pro", paymentType: "subscription" | "single") => {
     if (!user?.email) {
@@ -154,6 +154,9 @@ export default function PlanosPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20" data-animate>
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        <Suspense>
+          <SearchParamsEffect onPaymentApproved={handlePaymentApproved} onSubscriptionSuccess={handleSubscriptionSuccess} />
+        </Suspense>
         {isNewUser && (
           <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-0 shadow-xl" data-animate>
             <CardHeader className="py-4">
