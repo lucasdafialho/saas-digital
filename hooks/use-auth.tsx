@@ -1,15 +1,15 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
 
 interface User {
   id: string
   name: string
   email: string
-  plan: "starter" | "pro"
+  plan: "free" | "starter" | "pro"
   createdAt: string
+  generationsUsed?: number
 }
 
 interface AuthContextType {
@@ -22,81 +22,52 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const STORAGE_KEY = "konvexy_user"
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session on mount
-    const checkAuth = () => {
-      const userData = localStorage.getItem("marketpro_user")
-      if (userData) {
-        setUser(JSON.parse(userData))
-      }
-      setIsLoading(false)
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
+    if (raw) {
+      try {
+        const parsed: User = JSON.parse(raw)
+        setUser(parsed)
+      } catch {}
     }
-
-    checkAuth()
+    setIsLoading(false)
   }, [])
 
+  const persist = (u: User | null) => {
+    if (typeof window === 'undefined') return
+    if (u) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(u))
+    else window.localStorage.removeItem(STORAGE_KEY)
+  }
+
   const login = async (email: string, password: string) => {
-    console.log("[v0] Função login chamada com:", email, password)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Mock authentication - in real app, this would be an API call
-    if (email === "demo@marketpro.com" && password === "demo123") {
-      const userData: User = {
-        id: "1",
-        name: "Usuário Demo",
-        email: email,
-        plan: "pro",
-        createdAt: new Date().toISOString(),
-      }
-
-      localStorage.setItem("marketpro_user", JSON.stringify(userData))
-      document.cookie = `marketpro_user=${JSON.stringify(userData)}; path=/; max-age=86400`
-      setUser(userData)
-      console.log("[v0] Login demo realizado com sucesso")
-    } else if (email === "zshotbr@gmail.com" && password === "admin123") {
-      const userData: User = {
-        id: "2",
-        name: "Admin User",
-        email: email,
-        plan: "pro",
-        createdAt: new Date().toISOString(),
-      }
-
-      localStorage.setItem("marketpro_user", JSON.stringify(userData))
-      document.cookie = `marketpro_user=${JSON.stringify(userData)}; path=/; max-age=86400`
-      setUser(userData)
-      console.log("[v0] Login admin realizado com sucesso")
-    } else {
-      console.log("[v0] Credenciais inválidas:", email, password)
-      throw new Error("Credenciais inválidas")
-    }
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
+    if (!raw) throw new Error('Email ou senha inválidos')
+    const existing: User = JSON.parse(raw)
+    if (existing.email !== email) throw new Error('Email ou senha inválidos')
+    setUser(existing)
   }
 
   const register = async (name: string, email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const userData: User = {
-      id: Date.now().toString(),
+    const newUser: User = {
+      id: `user_${Date.now()}`,
       name,
       email,
-      plan: "starter",
+      plan: 'free',
       createdAt: new Date().toISOString(),
+      generationsUsed: 0,
     }
-
-    localStorage.setItem("marketpro_user", JSON.stringify(userData))
-    document.cookie = `marketpro_user=${JSON.stringify(userData)}; path=/; max-age=86400`
-    setUser(userData)
+    persist(newUser)
+    setUser(newUser)
   }
 
-  const logout = () => {
-    localStorage.removeItem("marketpro_user")
-    document.cookie = "marketpro_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"
+  const logout = async () => {
+    persist(null)
     setUser(null)
   }
 

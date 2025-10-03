@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone } from "lucide-react"
+import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
@@ -37,6 +37,7 @@ const navigation: NavEntry[] = [
   },
   { type: "item", name: "Produtos Nichados", href: "/dashboard/products", icon: Target },
   { type: "item", name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { type: "item", name: "Planos", href: "/dashboard/planos", icon: CreditCard },
   { type: "item", name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ]
 

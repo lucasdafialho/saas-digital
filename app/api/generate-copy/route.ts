@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { trackGeneration, canUserGenerate } from "@/lib/generations"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
@@ -6,7 +7,18 @@ const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { type, product, audience, benefit, tone, context } = body || {}
+    const { type, product, audience, benefit, tone, context, userId } = body || {}
+
+    // Verificar autenticação
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    // Verificar limite de gerações
+    const { canGenerate, reason } = await canUserGenerate(userId)
+    if (!canGenerate) {
+      return NextResponse.json({ success: false, error: reason }, { status: 403 })
+    }
 
     if (!type || !product || !audience || !benefit) {
       return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 })
@@ -80,6 +92,20 @@ export async function POST(request: NextRequest) {
       type: safe.type,
       timestamp: new Date().toISOString(),
     }))
+
+    // Registrar a geração
+    await trackGeneration({
+      userId,
+      type: 'copy',
+      metadata: {
+        copyType: safe.type,
+        product: safe.product,
+        audience: safe.audience,
+        benefit: safe.benefit,
+        tone: safe.tone,
+        generatedCount: items.length
+      }
+    })
 
     return NextResponse.json({ success: true, copies: items })
   } catch (error) {

@@ -1,6 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { useGenerations } from "@/hooks/use-generations"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -21,6 +24,15 @@ import Link from "next/link"
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const router = useRouter()
+  const { used, remaining, limit, planName } = useGenerations()
+
+  useEffect(() => {
+    const subscriptionSuccess = new URLSearchParams(window.location.search).get("subscription")
+    if (subscriptionSuccess === "success") {
+      localStorage.removeItem("marketpro_pending_payment")
+    }
+  }, [router])
 
   const stats = [
     {
@@ -97,7 +109,7 @@ export default function DashboardPage() {
       title: "Gerar Copy",
       description: "Crie textos persuasivos com IA",
       icon: Zap,
-      href: "/dashboard/copy-generator", // Updated path to dashboard structure
+      href: "/dashboard/copy-generator",
       color: "bg-primary",
       textColor: "text-white",
     },
@@ -105,7 +117,7 @@ export default function DashboardPage() {
       title: "Explorar Produtos",
       description: "Descubra produtos nichados validados",
       icon: Target,
-      href: "/dashboard/products", // Updated path to dashboard structure
+      href: "/dashboard/products",
       color: "bg-primary",
       textColor: "text-white",
     },
@@ -121,7 +133,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen space-y-8 pb-12" data-animate>
-      {/* Header */}
       <div className="border-b border-border pb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -134,20 +145,21 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center space-x-4">
             <Badge
-              variant={user?.plan === "pro" ? "default" : "secondary"}
+              variant={user?.plan === "pro" ? "default" : user?.plan === "free" ? "outline" : "secondary"}
               className={`px-4 py-2 text-sm font-semibold ${
                 user?.plan === "pro"
                   ? "bg-primary text-primary-foreground"
+                  : user?.plan === "free"
+                  ? "border-muted-foreground text-muted-foreground"
                   : "bg-secondary text-secondary-foreground"
               }`}
             >
-              {user?.plan === "pro" ? "PLANO PRO" : "PLANO STARTER"}
+              {user?.plan === "pro" ? "PLANO PRO" : user?.plan === "free" ? "PLANO GRATUITO" : "PLANO STARTER"}
             </Badge>
           </div>
         </div>
       </div>
 
-      {/* Account Status */}
       <Card className="border-l-4 border-l-primary bg-card shadow-lg hover:shadow-xl transition-shadow" data-animate>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -159,28 +171,40 @@ export default function DashboardPage() {
               <CardDescription className="text-muted-foreground mt-2">
                 {user?.plan === "pro"
                   ? "Você tem acesso completo a todas as funcionalidades premium"
+                  : user?.plan === "free"
+                  ? "Você está no plano gratuito. Assine um plano para ter mais gerações!"
                   : "Faça upgrade para Pro e desbloqueie recursos avançados de IA"}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        {user?.plan === "starter" && (
+        {user?.plan !== "pro" && (
           <CardContent className="pt-0">
             <div className="space-y-4">
               <div className="flex justify-between text-sm font-medium">
-                <span className="text-muted-foreground">Copies utilizadas este mês</span>
-                <span className="text-foreground">67/100</span>
+                <span className="text-muted-foreground">
+                  {user?.plan === "free" ? "Gerações gratuitas utilizadas" : "Copies utilizadas este mês"}
+                </span>
+                <span className="text-foreground">
+                  {used}/{limit === -1 ? "∞" : limit}
+                </span>
               </div>
-              <Progress value={67} className="h-3" />
-              <Button className="font-semibold">
-                Fazer Upgrade para Pro
-              </Button>
+              <Progress value={limit > 0 ? (used / limit) * 100 : 0} className="h-3" />
+              {remaining === 0 && limit !== -1 && (
+                <p className="text-sm text-destructive font-medium">
+                  Você atingiu o limite de gerações. Assine um plano para continuar!
+                </p>
+              )}
+              <Link href="/dashboard/planos">
+                <Button className="font-semibold w-full">
+                  {user?.plan === "free" ? "Ver Planos" : "Fazer Upgrade para Pro"}
+                </Button>
+              </Link>
             </div>
           </CardContent>
         )}
       </Card>
 
-      {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
@@ -220,7 +244,6 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Quick Actions */}
       <div>
         <h2 className="text-2xl font-bold text-foreground mb-6">Ações Rápidas</h2>
         <div className="grid gap-6 md:grid-cols-3">
@@ -254,9 +277,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Activity */}
         <Card className="bg-card shadow-lg">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-2 text-foreground">
@@ -291,7 +312,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Performance */}
         <Card className="bg-card shadow-lg" data-animate>
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center space-x-2 text-foreground">
@@ -329,7 +349,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Insights Card */}
       <Card className="bg-accent border border-border shadow-lg" data-animate>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center space-x-2 text-foreground">
