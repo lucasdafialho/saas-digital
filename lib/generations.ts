@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
+import { checkGenerationLimit, incrementGenerationCount } from './generation-limits'
 
 export interface Generation {
   id: string
@@ -6,6 +7,35 @@ export interface Generation {
   type: 'ads' | 'copy' | 'funnel' | 'canvas'
   content: any
   createdAt: string
+}
+
+export async function canUserGenerate(userId: string): Promise<{ canGenerate: boolean; reason?: string }> {
+  try {
+    const result = await checkGenerationLimit(userId, 'copy')
+    return {
+      canGenerate: result.allowed,
+      reason: result.reason
+    }
+  } catch (error) {
+    console.error('Erro ao verificar se usuário pode gerar:', error)
+    return {
+      canGenerate: false,
+      reason: 'Erro ao verificar limites de geração'
+    }
+  }
+}
+
+export async function trackGeneration(params: {
+  userId: string
+  type: 'ads' | 'copy' | 'funnel' | 'canvas'
+  metadata?: any
+}): Promise<void> {
+  try {
+    await saveGeneration(params.userId, params.type, params.metadata || {})
+    await incrementGenerationCount(params.userId)
+  } catch (error) {
+    console.error('Erro ao rastrear geração:', error)
+  }
 }
 
 export async function saveGeneration(

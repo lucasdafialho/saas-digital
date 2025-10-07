@@ -1,10 +1,24 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { getUserFromRequest } from "@/lib/auth-api"
+import { checkGenerationLimit } from "@/lib/generation-limits"
+import { trackGeneration } from "@/lib/generations"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getUserFromRequest(request)
+    
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    const limitCheck = await checkGenerationLimit(user.userId, 'ads')
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ success: false, error: limitCheck.reason }, { status: 403 })
+    }
+
     const body = await request.json()
     const {
       product,
@@ -157,6 +171,20 @@ export async function POST(request: NextRequest) {
     if (!parsed) {
       return NextResponse.json({ success: false, error: "Failed to parse provider JSON" }, { status: 502 })
     }
+
+    await trackGeneration({
+      userId: user.userId,
+      type: 'ads',
+      metadata: {
+        product,
+        offer,
+        audience,
+        objective,
+        platform,
+        budget,
+        timeframe
+      }
+    })
 
     return NextResponse.json({ success: true, strategy: parsed })
   } catch (error) {

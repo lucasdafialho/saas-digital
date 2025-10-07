@@ -3,10 +3,36 @@ import { supabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
+    if (!supabaseAdmin) {
+      console.error('Supabase Admin não configurado')
+      return NextResponse.json(
+        { error: "Configuração do servidor inválida" },
+        { status: 500 }
+      )
+    }
+
+    const apiSecret = request.headers.get('x-api-secret')
+    const expectedSecret = process.env.INTERNAL_API_SECRET
+    
+    if (!expectedSecret) {
+      console.error('INTERNAL_API_SECRET não configurado')
+      return NextResponse.json(
+        { error: "Configuração de segurança inválida" },
+        { status: 500 }
+      )
+    }
+
+    if (apiSecret !== expectedSecret) {
+      console.error('Tentativa de acesso não autorizado à rota update-plan')
+      return NextResponse.json(
+        { error: "Não autorizado" },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { userId, userEmail, planType, mercadopagoSubscriptionId } = body
 
-    // Aceita userId OU userEmail
     if ((!userId && !userEmail) || !planType) {
       return NextResponse.json(
         { error: "ID/Email do usuário e tipo de plano são obrigatórios" },

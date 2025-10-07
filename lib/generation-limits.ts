@@ -84,6 +84,11 @@ export async function checkGenerationLimit(userId: string, type: 'ads' | 'copy' 
 
 export async function incrementGenerationCount(userId: string): Promise<void> {
   try {
+    if (!supabaseAdmin) {
+      console.error('Supabase Admin não configurado')
+      return
+    }
+
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('generations_used')
@@ -106,6 +111,11 @@ export async function incrementGenerationCount(userId: string): Promise<void> {
 
 export async function resetMonthlyGenerations(): Promise<void> {
   try {
+    if (!supabaseAdmin) {
+      console.error('Supabase Admin não configurado')
+      return
+    }
+
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 

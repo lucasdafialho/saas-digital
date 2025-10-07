@@ -74,6 +74,10 @@ export async function createSubscription(
   planType: 'starter' | 'pro',
   mercadopagoSubscriptionId?: string
 ): Promise<Subscription> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase Admin não configurado')
+  }
+
   const plan = PLANS[planType]
   const expiresAt = plan ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null
 
@@ -110,6 +114,10 @@ export async function createSubscription(
 }
 
 export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase Admin não configurado')
+  }
+
   const { error } = await supabaseAdmin
     .from('subscriptions')
     .update({
@@ -124,6 +132,10 @@ export async function cancelSubscription(subscriptionId: string): Promise<void> 
 }
 
 export async function markSubscriptionExpired(subscriptionId: string): Promise<void> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase Admin não configurado')
+  }
+
   const { error } = await supabaseAdmin
     .from('subscriptions')
     .update({
@@ -141,6 +153,10 @@ export async function updateSubscriptionStatus(
   subscriptionId: string,
   status: 'active' | 'cancelled' | 'expired'
 ): Promise<void> {
+  if (!supabaseAdmin) {
+    throw new Error('Supabase Admin não configurado')
+  }
+
   const { error } = await supabaseAdmin
     .from('subscriptions')
     .update({
@@ -175,10 +191,12 @@ export async function validateUserPlan(userId: string): Promise<'free' | 'starte
     
     // Se não tem assinatura ativa, downgrade para free
     if (!activeSubscription) {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ plan: 'free' } as any)
-        .eq('id', userId)
+      if (supabaseAdmin) {
+        await supabaseAdmin
+          .from('profiles')
+          .update({ plan: 'free' } as any)
+          .eq('id', userId)
+      }
       
       return 'free'
     }
@@ -191,10 +209,12 @@ export async function validateUserPlan(userId: string): Promise<'free' | 'starte
         await updateSubscriptionStatus(activeSubscription.id, 'expired')
         
         // Downgrade para free
-        await supabaseAdmin
-          .from('profiles')
-          .update({ plan: 'free' } as any)
-          .eq('id', userId)
+        if (supabaseAdmin) {
+          await supabaseAdmin
+            .from('profiles')
+            .update({ plan: 'free' } as any)
+            .eq('id', userId)
+        }
         
         return 'free'
       }
