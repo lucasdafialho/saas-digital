@@ -57,9 +57,9 @@ export default function RegisterPage() {
     try {
       await register(formData.name, formData.email, formData.password)
       router.push("/dashboard")
+      router.refresh()
     } catch (err) {
-      setError("Erro ao criar conta. Tente novamente.")
-    } finally {
+      setError(err instanceof Error ? err.message : "Erro ao criar conta. Tente novamente.")
       setIsLoading(false)
     }
   }

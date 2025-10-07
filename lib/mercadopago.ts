@@ -1,3 +1,5 @@
+import crypto from "crypto"
+
 export interface MercadoPagoPreapprovalPlan {
   id?: string
   auto_recurring: {
@@ -40,17 +42,71 @@ export interface MercadoPagoWebhook {
   user_id: string
 }
 
+export interface MercadoPagoPayment {
+  id: number
+  status: 'pending' | 'approved' | 'authorized' | 'in_process' | 'in_mediation' | 'rejected' | 'cancelled' | 'refunded' | 'charged_back'
+  status_detail: string
+  payment_type_id: string
+  payment_method_id: string
+  transaction_amount: number
+  currency_id: string
+  date_approved: string | null
+  payer: {
+    email: string
+    first_name?: string
+    last_name?: string
+    identification?: {
+      type: string
+      number: string
+    }
+  }
+  external_reference?: string
+  description?: string
+}
+
 const MERCADOPAGO_API = "https://api.mercadopago.com/preapproval_plan"
 const MERCADOPAGO_SUBSCRIPTION_API = "https://api.mercadopago.com/preapproval"
 
 export class MercadoPagoService {
   private accessToken: string
+  private webhookSecret: string
 
   constructor() {
     this.accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || ""
+    this.webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET || ""
+    
     if (!this.accessToken) {
       throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado")
     }
+  }
+
+  validateWebhookSignature(headers: any, body: any): boolean {
+    if (!this.webhookSecret) {
+      console.warn("MERCADOPAGO_WEBHOOK_SECRET não configurado, pulando validação")
+      return true
+    }
+
+    const xSignature = headers['x-signature']
+    const xRequestId = headers['x-request-id']
+
+    if (!xSignature || !xRequestId) {
+      return false
+    }
+
+    const parts = xSignature.split(',')
+    const ts = parts.find((part: string) => part.startsWith('ts='))?.replace('ts=', '')
+    const v1 = parts.find((part: string) => part.startsWith('v1='))?.replace('v1=', '')
+
+    if (!ts || !v1) {
+      return false
+    }
+
+    const manifest = `id:${body.data?.id || ''};request-id:${xRequestId};ts:${ts};`
+    const hmac = crypto.createHmac('sha256', this.webhookSecret)
+    hmac.update(manifest)
+    const signature = hmac.digest('hex')
+
+    return signature === v1
   }
 
   async createPlan(plan: MercadoPagoPreapprovalPlan): Promise<MercadoPagoPreapprovalPlan> {
@@ -129,6 +185,38 @@ export class MercadoPagoService {
 
     if (!response.ok) {
       throw new Error("Erro ao cancelar assinatura")
+    }
+  }
+
+  async getPayment(paymentId: string): Promise<MercadoPagoPayment> {
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar pagamento")
+    }
+
+    return response.json()
+  }
+
+  async refundPayment(paymentId: string, amount?: number): Promise<void> {
+    const body = amount ? { amount } : {}
+    
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}/refunds`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+      body: JSON.stringify(body),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(`Erro ao reembolsar pagamento: ${JSON.stringify(error)}`)
     }
   }
 }

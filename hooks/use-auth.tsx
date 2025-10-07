@@ -2,6 +2,9 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
+import type { Session, User as SupabaseUser } from "@supabase/supabase-js"
+import { AuthApiError } from "@supabase/supabase-js"
 
 interface User {
   id: string
@@ -9,7 +12,7 @@ interface User {
   email: string
   plan: "free" | "starter" | "pro"
   createdAt: string
-  generationsUsed?: number
+  generationsUsed: number
 }
 
 interface AuthContextType {
@@ -17,61 +20,207 @@ interface AuthContextType {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-const STORAGE_KEY = "konvexy_user"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  useEffect(() => {
-    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
-    if (raw) {
-      try {
-        const parsed: User = JSON.parse(raw)
-        setUser(parsed)
-      } catch {}
-    }
-    setIsLoading(false)
-  }, [])
+  const loadUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id, email, name, plan, generations_used, created_at')
+        .eq('id', authUser.id)
+        .maybeSingle()
 
-  const persist = (u: User | null) => {
-    if (typeof window === 'undefined') return
-    if (u) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(u))
-    else window.localStorage.removeItem(STORAGE_KEY)
+      if (error) {
+        console.error('Erro ao carregar perfil:', error)
+        // Retorna dados básicos do auth como fallback
+        return {
+          id: authUser.id,
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+          email: authUser.email || '',
+          plan: 'free',
+          createdAt: authUser.created_at,
+          generationsUsed: 0
+        }
+      }
+
+      // Se não encontrou o perfil, retorna dados básicos
+      if (!profile) {
+        console.warn('⚠️ Perfil não encontrado. Usando dados do auth.')
+        return {
+          id: authUser.id,
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+          email: authUser.email || '',
+          plan: 'free',
+          createdAt: authUser.created_at,
+          generationsUsed: 0
+        }
+      }
+
+      // Cast explícito dos dados
+      const typedProfile = profile as any
+
+      return {
+        id: typedProfile.id,
+        name: typedProfile.name,
+        email: typedProfile.email,
+        plan: typedProfile.plan as "free" | "starter" | "pro",
+        createdAt: typedProfile.created_at,
+        generationsUsed: typedProfile.generations_used
+      }
+    } catch (err) {
+      console.error('Erro ao carregar perfil:', err)
+      // Retorna dados básicos como último recurso
+      return {
+        id: authUser.id,
+        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
+        email: authUser.email || '',
+        plan: 'free',
+        createdAt: authUser.created_at,
+        generationsUsed: 0
+      }
+    }
   }
 
+  const refreshUser = async () => {
+    try {
+      console.log("🔄 Atualizando dados do usuário...")
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) {
+        console.error("❌ Erro ao atualizar usuário:", error)
+        return
+      }
+
+      if (session?.user) {
+        console.log("👤 Sessão encontrada, recarregando perfil...")
+        const userProfile = await loadUserProfile(session.user)
+        setUser(userProfile)
+        console.log("✅ Usuário atualizado")
+      } else {
+        console.log("⚠️ Nenhuma sessão encontrada")
+        setUser(null)
+      }
+    } catch (err) {
+      console.error('❌ Erro ao atualizar usuário:', err)
+    }
+  }
+
+  useEffect(() => {
+    let mounted = true
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (mounted && session?.user) {
+          const userProfile = await loadUserProfile(session.user)
+          setUser(userProfile)
+        }
+      } catch (err) {
+        console.error('Erro ao inicializar auth:', err)
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    initAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return
+
+      if (session?.user) {
+        const userProfile = await loadUserProfile(session.user)
+        setUser(userProfile)
+      } else {
+        setUser(null)
+      }
+
+      setIsLoading(false)
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [])
+
   const login = async (email: string, password: string) => {
-    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null
-    if (!raw) throw new Error('Email ou senha inválidos')
-    const existing: User = JSON.parse(raw)
-    if (existing.email !== email) throw new Error('Email ou senha inválidos')
-    setUser(existing)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+
+    if (error) throw error
+
+    if (data.session?.user) {
+      const userProfile = await loadUserProfile(data.session.user)
+      setUser(userProfile)
+    }
   }
 
   const register = async (name: string, email: string, password: string) => {
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      name,
+    const { data, error } = await supabase.auth.signUp({
       email,
-      plan: 'free',
-      createdAt: new Date().toISOString(),
-      generationsUsed: 0,
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo: `${window.location.origin}/dashboard`
+      }
+    })
+
+    if (error) {
+      if (error.message.includes('already registered')) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+        if (signInError) throw signInError
+        
+        if (signInData.session?.user) {
+          const userProfile = await loadUserProfile(signInData.session.user)
+          setUser(userProfile)
+        }
+        return
+      }
+      throw error
     }
-    persist(newUser)
-    setUser(newUser)
+
+    if (data.session?.user) {
+      const userProfile = await loadUserProfile(data.session.user)
+      setUser(userProfile)
+    } else if (data.user && !data.session) {
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      if (signInError) throw signInError
+      
+      if (signInData.session?.user) {
+        const userProfile = await loadUserProfile(signInData.session.user)
+        setUser(userProfile)
+      }
+    }
   }
 
   const logout = async () => {
-    persist(null)
+    await supabase.auth.signOut()
     setUser(null)
   }
 
-  return <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

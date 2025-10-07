@@ -16,7 +16,7 @@ import {
 import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone, CreditCard } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type NavEntry =
   | { type: "item"; name: string; href: string; icon: any }
@@ -46,15 +46,36 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, logout } = useAuth()
+  const { user, logout, isLoading } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login')
+    }
+  }, [user, isLoading, router])
+
   const handleLogout = () => {
     logout()
     router.push("/")
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
   }
 
   return (

@@ -27,16 +27,12 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    console.log("[v0] Tentativa de login com:", email, password)
-
     try {
       await login(email, password)
-      console.log("[v0] Login bem-sucedido, redirecionando...")
       router.push("/dashboard")
+      router.refresh()
     } catch (err) {
-      console.log("[v0] Erro no login:", err)
-      setError("Email ou senha inválidos")
-    } finally {
+      setError(err instanceof Error ? err.message : "Email ou senha inválidos")
       setIsLoading(false)
     }
   }

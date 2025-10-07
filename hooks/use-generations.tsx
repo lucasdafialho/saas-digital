@@ -3,33 +3,17 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "./use-auth"
 import { PLANS } from "@/lib/mercadopago"
-
-const GEN_KEY = "konvexy_generations"
+import { supabase } from "@/lib/supabase"
 
 export function useGenerations() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const [generationsUsed, setGenerationsUsed] = useState(0)
 
   useEffect(() => {
-    if (!user) return
-    const all = typeof window !== 'undefined' ? window.localStorage.getItem(GEN_KEY) : null
-    if (!all) return setGenerationsUsed(0)
-    try {
-      const map = JSON.parse(all) as Record<string, number>
-      setGenerationsUsed(map[user.id] || 0)
-    } catch {
-      setGenerationsUsed(0)
+    if (user) {
+      setGenerationsUsed(user.generationsUsed || 0)
     }
   }, [user])
-
-  const persist = (count: number) => {
-    if (!user || typeof window === 'undefined') return
-    const all = window.localStorage.getItem(GEN_KEY)
-    let map: Record<string, number> = {}
-    try { map = all ? JSON.parse(all) : {} } catch { map = {} }
-    map[user.id] = count
-    window.localStorage.setItem(GEN_KEY, JSON.stringify(map))
-  }
 
   const getGenerationLimit = () => {
     if (!user) return 0
@@ -49,14 +33,41 @@ export function useGenerations() {
   }
 
   const incrementGenerations = async () => {
+    if (!user) return
+
     const next = generationsUsed + 1
+    
+    // Atualizar no Supabase
+    const { error } = await supabase
+      .from('profiles')
+      .update({ generations_used: next })
+      .eq('id', user.id)
+
+    if (error) {
+      console.error('Erro ao incrementar gerações:', error)
+      return
+    }
+
     setGenerationsUsed(next)
-    persist(next)
+    await refreshUser()
   }
 
   const resetGenerations = async () => {
+    if (!user) return
+
+    // Atualizar no Supabase
+    const { error } = await supabase
+      .from('profiles')
+      .update({ generations_used: 0 })
+      .eq('id', user.id)
+
+    if (error) {
+      console.error('Erro ao resetar gerações:', error)
+      return
+    }
+
     setGenerationsUsed(0)
-    persist(0)
+    await refreshUser()
   }
 
   return {

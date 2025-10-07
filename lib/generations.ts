@@ -1,40 +1,80 @@
-export type GenerationType = 'copy' | 'funnel' | 'ads' | 'canvas'
+import { supabase } from './supabase'
 
-interface TrackGenerationParams {
+export interface Generation {
+  id: string
   userId: string
-  type: GenerationType
-  metadata?: any
+  type: 'ads' | 'copy' | 'funnel' | 'canvas'
+  content: any
+  createdAt: string
 }
 
-/**
- * Registra uma nova geração e incrementa o contador do usuário
- */
-export async function trackGeneration({ userId, type, metadata }: TrackGenerationParams) {
-  try {
-    return { success: true, generation: { id: `gen_${Date.now()}`, userId, type, metadata } }
-  } catch (error) {
-    return { success: false, error: String(error) }
+export async function saveGeneration(
+  userId: string,
+  type: 'ads' | 'copy' | 'funnel' | 'canvas',
+  content: any
+) {
+  const { data, error } = await supabase
+    .from('generations')
+    .insert({
+      user_id: userId,
+      type,
+      content
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Erro ao salvar geração:', error)
+    throw error
   }
+
+  return data
 }
 
-/**
- * Verifica se o usuário pode gerar mais conteúdo baseado no plano
- */
-export async function canUserGenerate(userId: string): Promise<{ canGenerate: boolean; reason?: string; user?: any }> {
-  try {
-    return { canGenerate: true, user: { id: userId } }
-  } catch (error) {
-    return { canGenerate: true }
+export async function getUserGenerations(userId: string, type?: 'ads' | 'copy' | 'funnel' | 'canvas') {
+  let query = supabase
+    .from('generations')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (type) {
+    query = query.eq('type', type)
   }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Erro ao buscar gerações:', error)
+    throw error
+  }
+
+  return data.map(gen => ({
+    id: gen.id,
+    userId: gen.user_id,
+    type: gen.type,
+    content: gen.content,
+    createdAt: gen.created_at
+  })) as Generation[]
 }
 
-/**
- * Obtém o histórico de gerações do usuário
- */
-export async function getUserGenerations(userId: string, limit = 50) {
-  try {
-    return { success: true, generations: [] }
-  } catch (error) {
-    return { success: false, error: String(error) }
+export async function getGenerationById(id: string) {
+  const { data, error } = await supabase
+    .from('generations')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Erro ao buscar geração:', error)
+    throw error
   }
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    type: data.type,
+    content: data.content,
+    createdAt: data.created_at
+  } as Generation
 }
