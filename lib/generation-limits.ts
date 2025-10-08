@@ -28,6 +28,11 @@ export const GENERATION_LIMITS: Record<string, GenerationLimit> = {
 
 export async function checkGenerationLimit(userId: string, type: 'ads' | 'copy' | 'funnel' | 'canvas'): Promise<{ allowed: boolean; reason?: string; remaining?: number }> {
   try {
+    if (!supabaseAdmin) {
+      console.error('Supabase Admin não configurado')
+      return { allowed: false, reason: 'Erro de configuração do servidor' }
+    }
+
     const currentPlan = await validateUserPlan(userId)
     const limits = GENERATION_LIMITS[currentPlan]
 
@@ -41,9 +46,8 @@ export async function checkGenerationLimit(userId: string, type: 'ads' | 'copy' 
 
     const now = new Date()
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-    const { count: monthlyCount } = await supabase
+    const { count: monthlyCount } = await supabaseAdmin
       .from('generations')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
@@ -54,22 +58,6 @@ export async function checkGenerationLimit(userId: string, type: 'ads' | 'copy' 
         allowed: false, 
         reason: `Limite mensal de ${limits.monthlyLimit} gerações atingido`,
         remaining: 0
-      }
-    }
-
-    if (limits.dailyLimit && limits.dailyLimit !== -1) {
-      const { count: dailyCount } = await supabase
-        .from('generations')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .gte('created_at', startOfDay.toISOString())
-
-      if ((dailyCount || 0) >= limits.dailyLimit) {
-        return { 
-          allowed: false, 
-          reason: `Limite diário de ${limits.dailyLimit} gerações atingido`,
-          remaining: 0
-        }
       }
     }
 
