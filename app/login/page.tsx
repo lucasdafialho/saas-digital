@@ -42,7 +42,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
-          <img src="/konvexy/Konvexy + Logo.png" alt="Konvexy" className="h-36 w-auto" />
+          <img src="/konvexy/konvexy-logo.png" alt="Konvexy" className="h-36 w-auto" />
         </div>
 
         <Card className="border-0 shadow-xl">

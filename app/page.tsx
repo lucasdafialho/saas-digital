@@ -12,7 +12,7 @@ export default function LandingPage() {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="px-6 h-20 grid grid-cols-3 items-center">
           <div className="flex items-center justify-start">
-            <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="h-10 w-auto" />
+            <img src="/konvexy/konvexy-logo-transparent.png" alt="Konvexy" className="h-10 w-auto" />
           </div>
 
           <nav className="hidden md:flex items-center justify-center space-x-8">
@@ -44,7 +44,7 @@ export default function LandingPage() {
       <section className="py-24 px-6 mb-16" data-animate>
         <div className="container mx-auto text-center max-w-5xl">
           <div className="mb-6 flex justify-center">
-            <img src="/konvexy/Konvexy Escrito PNG.png" alt="Konvexy" className="h-20 md:h-24" />
+            <img src="/konvexy/konvexy-escrito.png" alt="Konvexy" className="h-20 md:h-24" />
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight tracking-tight">
@@ -489,7 +489,7 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center space-x-3 mb-6">
               <div className="w-10 h-10 rounded-sm flex items-center justify-center">
-                <img src="/konvexy/Konvexy Logo Transparante.png" alt="Konvexy" className="w-10 h-10" />
+                <img src="/konvexy/konvexy-logo-transparent.png" alt="Konvexy" className="w-10 h-10" />
               </div>
               <span className="text-2xl font-bold tracking-tight">Konvexy</span>
               </div>
