@@ -213,20 +213,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut({ scope: 'global' })
       setUser(null)
+      setIsLoading(true)
+      
+      await supabase.auth.signOut({ scope: 'global' })
       
       if (typeof window !== 'undefined') {
         localStorage.clear()
         sessionStorage.clear()
         
-        window.location.href = '/'
+        const allCookies = document.cookie.split(';')
+        for (const cookie of allCookies) {
+          const cookieName = cookie.split('=')[0].trim()
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`
+        }
+        
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 100)
       }
     } catch (error) {
       console.error('Erro ao fazer logout:', error)
       setUser(null)
       if (typeof window !== 'undefined') {
-        window.location.href = '/'
+        localStorage.clear()
+        sessionStorage.clear()
+        window.location.href = '/login'
       }
     }
   }
