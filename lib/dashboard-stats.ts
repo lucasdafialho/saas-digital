@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from './supabase-admin'
 
 export interface DashboardMetrics {
   totalGenerations: number
@@ -12,15 +12,7 @@ export interface DashboardMetrics {
 }
 
 export async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
+  const supabase = getSupabaseAdmin()
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -70,15 +62,7 @@ export async function getDashboardMetrics(userId: string): Promise<DashboardMetr
 }
 
 export async function getRecentActivities(userId: string, limit: number = 10) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-  
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
+  const supabase = getSupabaseAdmin()
 
   const { data, error } = await supabase
     .from('generations')

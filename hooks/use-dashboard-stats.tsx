@@ -34,28 +34,30 @@ interface DashboardStats {
 
 export function useDashboardStats(userId?: string) {
   const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!userId) {
+      return
+    }
+
     let mounted = true
-    let timeoutId: NodeJS.Timeout
+    let abortController = new AbortController()
 
     const fetchStats = async () => {
-      if (!userId) {
-        timeoutId = setTimeout(() => {
-          if (mounted) {
-            setIsLoading(false)
-          }
-        }, 3000)
-        return
-      }
-
       try {
-        setIsLoading(true)
-        setError(null)
+        if (mounted) {
+          setIsLoading(true)
+          setError(null)
+        }
         
-        const response = await fetch('/api/dashboard/stats')
+        const response = await fetch('/api/dashboard/stats', {
+          signal: abortController.signal,
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        })
         
         if (!response.ok) {
           throw new Error('Erro ao buscar estatísticas')
@@ -65,14 +67,15 @@ export function useDashboardStats(userId?: string) {
         
         if (mounted) {
           setStats(data)
+          setIsLoading(false)
         }
       } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return
+        }
         console.error('Erro ao buscar estatísticas:', err)
         if (mounted) {
           setError(err instanceof Error ? err.message : 'Erro desconhecido')
-        }
-      } finally {
-        if (mounted) {
           setIsLoading(false)
         }
       }
@@ -82,9 +85,7 @@ export function useDashboardStats(userId?: string) {
 
     return () => {
       mounted = false
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
+      abortController.abort()
     }
   }, [userId])
 

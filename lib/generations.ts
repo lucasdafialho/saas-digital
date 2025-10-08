@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from './supabase'
+import { getSupabaseAdmin } from './supabase-admin'
 import { checkGenerationLimit, incrementGenerationCount } from './generation-limits'
 
 export interface Generation {
@@ -43,7 +43,8 @@ export async function saveGeneration(
   type: 'ads' | 'copy' | 'funnel' | 'canvas',
   content: any
 ) {
-  const { data, error } = await supabase
+  const supabaseAdmin = getSupabaseAdmin()
+  const { data, error } = await supabaseAdmin
     .from('generations')
     .insert({
       user_id: userId,
@@ -62,7 +63,8 @@ export async function saveGeneration(
 }
 
 export async function getUserGenerations(userId: string, type?: 'ads' | 'copy' | 'funnel' | 'canvas') {
-  let query = supabase
+  const supabaseAdmin = getSupabaseAdmin()
+  let query = supabaseAdmin
     .from('generations')
     .select('*')
     .eq('user_id', userId)
@@ -89,7 +91,8 @@ export async function getUserGenerations(userId: string, type?: 'ads' | 'copy' |
 }
 
 export async function getGenerationById(id: string) {
-  const { data, error } = await supabase
+  const supabaseAdmin = getSupabaseAdmin()
+  const { data, error } = await supabaseAdmin
     .from('generations')
     .select('*')
     .eq('id', id)

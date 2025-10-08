@@ -25,7 +25,7 @@ import {
 import Link from "next/link"
 
 export default function DashboardPage() {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, isLoading: authLoading } = useAuth()
   const router = useRouter()
   const { used, remaining, limit, planName } = useGenerations()
   const { stats: dashboardStats, isLoading: isLoadingStats, refresh: refreshStats } = useDashboardStats(user?.id)
@@ -36,6 +36,17 @@ export default function DashboardPage() {
       localStorage.removeItem("marketpro_pending_payment")
     }
   }, [router])
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
 
   const stats = useMemo(() => {
     if (!dashboardStats) {
