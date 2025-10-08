@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone, CreditCard } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 
 type NavEntry =
   | { type: "item"; name: string; href: string; icon: any }
@@ -48,6 +48,7 @@ export default function DashboardLayout({
 }) {
   const { user, logout, isLoading } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const planLabels: Record<string, string> = {
@@ -56,16 +57,34 @@ export default function DashboardLayout({
   }
   const planDisplayName = user?.plan ? planLabels[user.plan] ?? "Gratuito" : "Gratuito"
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      console.log('[DASHBOARD] Sem usuário após carregamento, redirecionando para login...')
+      router.replace('/login')
+    }
+  }, [isLoading, user, router])
+
   const handleLogout = async () => {
     await logout()
   }
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Redirecionando...</p>
         </div>
       </div>
     )

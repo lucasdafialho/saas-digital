@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 
 interface DashboardStats {
   stats: {
@@ -36,6 +36,8 @@ export function useDashboardStats(userId?: string) {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const fetchingRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     if (!userId) {
@@ -44,53 +46,80 @@ export function useDashboardStats(userId?: string) {
       return
     }
 
-    let mounted = true
-    let abortController = new AbortController()
-
-    const fetchStats = async () => {
-      try {
-        if (mounted) {
-          setIsLoading(true)
-          setError(null)
-        }
-        
-        const response = await fetch('/api/dashboard/stats', {
-          signal: abortController.signal,
-          credentials: 'include',
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache'
-          }
-        })
-        
-        if (!response.ok) {
-          throw new Error('Erro ao buscar estatísticas')
-        }
-
-        const data = await response.json()
-        
-        if (mounted) {
-          setStats(data)
-          setIsLoading(false)
-        }
-      } catch (err) {
-        if ((err as any)?.name === 'AbortError') {
-          if (mounted) setIsLoading(false)
-          return
-        }
-        console.error('Erro ao buscar estatísticas:', err)
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Erro desconhecido')
-          setIsLoading(false)
-        }
-      }
+    if (fetchingRef.current) {
+      console.log('[STATS] Requisição já em andamento, ignorando...')
+      return
     }
 
-    fetchStats()
+    let mounted = true
+    const debounceTimeout = setTimeout(() => {
+      if (!mounted) return
+
+      const fetchStats = async () => {
+        if (fetchingRef.current) return
+        
+        try {
+          fetchingRef.current = true
+          
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort()
+          }
+          
+          abortControllerRef.current = new AbortController()
+          
+          if (mounted) {
+            setIsLoading(true)
+            setError(null)
+          }
+          
+          console.log('[STATS] Buscando estatísticas...')
+          const response = await fetch('/api/dashboard/stats', {
+            signal: abortControllerRef.current.signal,
+            credentials: 'include',
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache'
+            }
+          })
+          
+          if (!response.ok) {
+            throw new Error('Erro ao buscar estatísticas')
+          }
+
+          const data = await response.json()
+          
+          if (mounted) {
+            console.log('[STATS] Estatísticas carregadas com sucesso')
+            setStats(data)
+            setIsLoading(false)
+          }
+        } catch (err) {
+          if ((err as any)?.name === 'AbortError') {
+            console.log('[STATS] Requisição cancelada')
+            if (mounted) setIsLoading(false)
+            return
+          }
+          console.error('[STATS] Erro ao buscar estatísticas:', err)
+          if (mounted) {
+            setError(err instanceof Error ? err.message : 'Erro desconhecido')
+            setIsLoading(false)
+          }
+        } finally {
+          fetchingRef.current = false
+        }
+      }
+
+      fetchStats()
+    }, 500)
 
     return () => {
       mounted = false
-      abortController.abort()
+      clearTimeout(debounceTimeout)
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+      fetchingRef.current = false
     }
   }, [userId])
 
