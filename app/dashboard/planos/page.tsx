@@ -217,12 +217,14 @@ export default function PlanosPage() {
                 </div>
               )}
 
-              <CardHeader className="text-center pb-4 pt-8">
-                <div className={`w-16 h-16 ${plan.color} rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md group-hover:scale-105 transition-transform duration-300`}>
-                  <Icon className={`w-8 h-8 ${plan.iconColor}`} />
+              <CardHeader className="text-center pb-4 pt-8 min-h-[280px] flex flex-col justify-between">
+                <div>
+                  <div className={`w-16 h-16 ${plan.color} rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md group-hover:scale-105 transition-transform duration-300`}>
+                    <Icon className={`w-8 h-8 ${plan.iconColor}`} />
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-foreground mb-2">{plan.name}</CardTitle>
+                  <CardDescription className="text-sm leading-relaxed">{plan.description}</CardDescription>
                 </div>
-                <CardTitle className="text-2xl font-bold text-foreground mb-2">{plan.name}</CardTitle>
-                <CardDescription className="text-sm leading-relaxed">{plan.description}</CardDescription>
                 <div className="mt-4">
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-sm text-muted-foreground font-medium">R$</span>
@@ -237,8 +239,8 @@ export default function PlanosPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
+              <CardContent className="space-y-6 flex flex-col">
+                <ul className="space-y-3 flex-grow">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3 group/item">
                       <div className="w-5 h-5 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
@@ -249,7 +251,7 @@ export default function PlanosPage() {
                   ))}
                 </ul>
 
-                <div className="pt-4 border-t border-border">
+                <div className="pt-4 border-t border-border mt-auto">
                   {isCurrentPlan ? (
                     <Badge className="w-full justify-center py-3 h-12 text-sm font-semibold" variant="secondary">
                       <Check className="w-4 h-4 mr-2" />

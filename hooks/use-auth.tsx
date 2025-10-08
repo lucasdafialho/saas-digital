@@ -34,13 +34,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('id, email, name, plan, generations_used, created_at')
+        .select('*')
         .eq('id', authUser.id)
-        .maybeSingle()
+        .single()
 
-      if (error) {
-        console.error('Erro ao carregar perfil:', error)
-        // Retorna dados básicos do auth como fallback
+      if (error || !profile) {
         return {
           id: authUser.id,
           name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
@@ -51,33 +49,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Se não encontrou o perfil, retorna dados básicos
-      if (!profile) {
-        console.warn('⚠️ Perfil não encontrado. Usando dados do auth.')
-        return {
-          id: authUser.id,
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
-          email: authUser.email || '',
-          plan: 'free',
-          createdAt: authUser.created_at,
-          generationsUsed: 0
-        }
-      }
-
-      // Cast explícito dos dados
       const typedProfile = profile as any
 
       return {
         id: typedProfile.id,
         name: typedProfile.name,
         email: typedProfile.email,
-        plan: typedProfile.plan as "free" | "starter" | "pro",
+        plan: (typedProfile.plan || 'free') as "free" | "starter" | "pro",
         createdAt: typedProfile.created_at,
-        generationsUsed: typedProfile.generations_used
+        generationsUsed: typedProfile.generations_used || 0
       }
     } catch (err) {
-      console.error('Erro ao carregar perfil:', err)
-      // Retorna dados básicos como último recurso
       return {
         id: authUser.id,
         name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',

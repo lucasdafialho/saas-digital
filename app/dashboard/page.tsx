@@ -23,7 +23,7 @@ import {
 import Link from "next/link"
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const router = useRouter()
   const { used, remaining, limit, planName } = useGenerations()
 
@@ -144,18 +144,21 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center space-x-4">
-            <Badge
-              variant={user?.plan === "pro" ? "default" : user?.plan === "free" ? "outline" : "secondary"}
-              className={`px-4 py-2 text-sm font-semibold ${
-                user?.plan === "pro"
-                  ? "bg-primary text-primary-foreground"
-                  : user?.plan === "free"
-                  ? "border-muted-foreground text-muted-foreground"
-                  : "bg-secondary text-secondary-foreground"
-              }`}
-            >
-              {user?.plan === "pro" ? "PLANO PRO" : user?.plan === "free" ? "PLANO GRATUITO" : "PLANO STARTER"}
-            </Badge>
+            {user?.plan === "pro" && (
+              <Badge className="px-4 py-2 text-sm font-semibold bg-primary text-primary-foreground">
+                PLANO PRO
+              </Badge>
+            )}
+            {user?.plan === "starter" && (
+              <Badge variant="secondary" className="px-4 py-2 text-sm font-semibold">
+                PLANO STARTER
+              </Badge>
+            )}
+            {(!user?.plan || user?.plan === "free") && (
+              <Badge variant="outline" className="px-4 py-2 text-sm font-semibold border-muted-foreground text-muted-foreground">
+                PLANO GRATUITO
+              </Badge>
+            )}
           </div>
         </div>
       </div>

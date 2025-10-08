@@ -25,9 +25,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Tentar obter a sessão, mas ignorar erros de token inválido
+  let session = null
+  try {
+    const { data } = await supabase.auth.getSession()
+    session = data.session
+  } catch (error) {
+    // Ignorar erros de token inválido/expirado
+    session = null
+  }
 
   const user = session?.user
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
