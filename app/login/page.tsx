@@ -40,8 +40,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      router.push("/dashboard")
-      router.refresh()
+      router.replace("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Email ou senha inválidos")
       setIsLoading(false)

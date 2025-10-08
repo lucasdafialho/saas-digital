@@ -39,6 +39,8 @@ export function useDashboardStats(userId?: string) {
 
   useEffect(() => {
     if (!userId) {
+      setStats(null)
+      setIsLoading(false)
       return
     }
 
@@ -54,6 +56,8 @@ export function useDashboardStats(userId?: string) {
         
         const response = await fetch('/api/dashboard/stats', {
           signal: abortController.signal,
+          credentials: 'include',
+          cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache'
           }
@@ -70,7 +74,8 @@ export function useDashboardStats(userId?: string) {
           setIsLoading(false)
         }
       } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
+        if ((err as any)?.name === 'AbortError') {
+          if (mounted) setIsLoading(false)
           return
         }
         console.error('Erro ao buscar estatísticas:', err)
@@ -96,7 +101,13 @@ export function useDashboardStats(userId?: string) {
       setIsLoading(true)
       setError(null)
       
-      const response = await fetch('/api/dashboard/stats')
+      const response = await fetch('/api/dashboard/stats', {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       
       if (!response.ok) {
         throw new Error('Erro ao buscar estatísticas')
