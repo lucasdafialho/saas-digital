@@ -220,8 +220,8 @@ export default function ConfiguracoesPage() {
   function getPlanPrice(plan: string) {
     const prices: Record<string, string> = {
       free: 'R$ 0',
-      starter: 'R$ 97',
-      pro: 'R$ 197'
+      starter: 'R$ 49,90',
+      pro: 'R$ 149,90'
     }
     return prices[plan] || 'R$ 0'
   }
@@ -404,7 +404,7 @@ export default function ConfiguracoesPage() {
                     <span>Copies geradas este mês</span>
                     <span>
                       {settings?.generationsThisMonth || 0} / {
-                        settings?.profile.plan === 'free' ? '3' :
+                        settings?.profile.plan === 'free' ? '5' :
                           settings?.profile.plan === 'starter' ? '50' :
                             'Ilimitado'
                       }

@@ -51,6 +51,11 @@ export default function DashboardLayout({
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const planLabels: Record<string, string> = {
+    pro: "Pro",
+    starter: "Starter",
+  }
+  const planDisplayName = user?.plan ? planLabels[user.plan] ?? "Gratuito" : "Gratuito"
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -225,7 +230,7 @@ export default function DashboardLayout({
           </Button>
 
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-muted-foreground">Plano {user?.plan === "pro" ? "Pro" : "Starter"}</div>
+            <div className="text-sm text-muted-foreground">Plano {planDisplayName}</div>
           </div>
         </header>
 

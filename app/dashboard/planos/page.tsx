@@ -198,7 +198,7 @@ export default function PlanosPage() {
           return (
             <Card
               key={plan.id}
-              className={`relative overflow-hidden transition-all duration-300 group ${
+              className={`relative overflow-hidden transition-all duration-300 group flex flex-col ${
                 plan.popular
                   ? "border-2 border-primary shadow-xl hover:shadow-2xl bg-gradient-to-br from-background to-primary/5"
                   : "border hover:shadow-xl hover:border-primary/50"
@@ -239,7 +239,7 @@ export default function PlanosPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6 flex flex-col">
+              <CardContent className="space-y-6 flex flex-col flex-1">
                 <ul className="space-y-3 flex-grow">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start gap-3 group/item">

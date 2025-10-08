@@ -391,7 +391,7 @@ export default function LandingPage() {
                 <CardTitle className="text-2xl mb-2">Starter</CardTitle>
                 <CardDescription className="text-base">Para empreendedores iniciantes</CardDescription>
                 <div className="text-4xl font-bold mt-4">
-                  R$ 97<span className="text-lg font-normal text-muted-foreground">/mês</span>
+                  R$ 49,90<span className="text-lg font-normal text-muted-foreground">/mês</span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -427,7 +427,7 @@ export default function LandingPage() {
                 <CardTitle className="text-2xl mb-2">Pro</CardTitle>
                 <CardDescription className="text-base">Para empreendedores sérios</CardDescription>
                 <div className="text-4xl font-bold mt-4">
-                  R$ 197<span className="text-lg font-normal text-muted-foreground">/mês</span>
+                  R$ 149,90<span className="text-lg font-normal text-muted-foreground">/mês</span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">

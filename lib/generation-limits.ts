@@ -12,7 +12,7 @@ export const GENERATION_LIMITS: Record<string, GenerationLimit> = {
   free: {
     plan: 'free',
     monthlyLimit: PLANS.free.limit,
-    dailyLimit: 3
+    dailyLimit: 5
   },
   starter: {
     plan: 'starter',

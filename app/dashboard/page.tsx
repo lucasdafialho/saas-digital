@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useGenerations } from "@/hooks/use-generations"
+import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +20,7 @@ import {
   Activity,
   Sparkles,
   Clock,
+  Layers3,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -26,6 +28,7 @@ export default function DashboardPage() {
   const { user, refreshUser } = useAuth()
   const router = useRouter()
   const { used, remaining, limit, planName } = useGenerations()
+  const { stats: dashboardStats, isLoading: isLoadingStats, refresh: refreshStats } = useDashboardStats(user?.id)
 
   useEffect(() => {
     const subscriptionSuccess = new URLSearchParams(window.location.search).get("subscription")
@@ -34,75 +37,111 @@ export default function DashboardPage() {
     }
   }, [router])
 
-  const stats = [
-    {
-      title: "Copies Geradas",
-      value: "127",
-      change: "+12%",
-      changeType: "positive" as const,
-      icon: Zap,
-      color: "bg-primary",
-      comingSoon: false,
-    },
-    {
-      title: "Taxa de Conversão",
-      value: "3.2%",
-      change: "+0.8%",
-      changeType: "positive" as const,
-      icon: TrendingUp,
-      color: "bg-muted",
-      comingSoon: true,
-    },
-    {
-      title: "Produtos Analisados",
-      value: "45",
-      change: "+5",
-      changeType: "positive" as const,
-      icon: Target,
-      color: "bg-primary",
-      comingSoon: false,
-    },
-    {
-      title: "ROI Médio",
-      value: "285%",
-      change: "+23%",
-      changeType: "positive" as const,
-      icon: DollarSign,
-      color: "bg-muted",
-      comingSoon: true,
-    },
-  ]
+  const stats = useMemo(() => {
+    if (!dashboardStats) {
+      return [
+        {
+          title: "Copies Geradas",
+          value: "0",
+          change: "+0%",
+          changeType: "positive" as const,
+          icon: Zap,
+          color: "bg-primary",
+          comingSoon: false,
+        },
+        {
+          title: "Taxa de Conversão",
+          value: "Em breve",
+          change: "",
+          changeType: "positive" as const,
+          icon: TrendingUp,
+          color: "bg-muted",
+          comingSoon: true,
+        },
+        {
+          title: "Produtos Analisados",
+          value: "0",
+          change: "+0",
+          changeType: "positive" as const,
+          icon: Target,
+          color: "bg-primary",
+          comingSoon: false,
+        },
+        {
+          title: "ROI Médio",
+          value: "Em breve",
+          change: "",
+          changeType: "positive" as const,
+          icon: DollarSign,
+          color: "bg-muted",
+          comingSoon: true,
+        },
+      ]
+    }
 
-  const recentActivities = [
-    {
-      action: "Copy gerada",
-      description: "Headline para produto de fitness",
-      time: "2 horas atrás",
-      type: "copy",
-      icon: Zap,
-    },
-    {
-      action: "Produto analisado",
-      description: "Curso de marketing digital",
-      time: "4 horas atrás",
-      type: "product",
-      icon: Target,
-    },
-    {
-      action: "Copy gerada",
-      description: "Email de vendas para e-book",
-      time: "6 horas atrás",
-      type: "copy",
-      icon: Zap,
-    },
-    {
-      action: "Relatório gerado",
-      description: "Análise mensal de performance",
-      time: "1 dia atrás",
-      type: "report",
-      icon: BarChart3,
-    },
-  ]
+    return [
+      {
+        title: "Copies Geradas",
+        value: dashboardStats.stats.copiesGenerated.value.toString(),
+        change: `${dashboardStats.stats.copiesGenerated.change >= 0 ? '+' : ''}${dashboardStats.stats.copiesGenerated.change}%`,
+        changeType: dashboardStats.stats.copiesGenerated.changeType,
+        icon: Zap,
+        color: "bg-primary",
+        comingSoon: false,
+      },
+      {
+        title: "Taxa de Conversão",
+        value: "Em breve",
+        change: "",
+        changeType: "positive" as const,
+        icon: TrendingUp,
+        color: "bg-muted",
+        comingSoon: true,
+      },
+      {
+        title: "Produtos Analisados",
+        value: dashboardStats.stats.productsAnalyzed.value.toString(),
+        change: `+${dashboardStats.stats.productsAnalyzed.change}`,
+        changeType: dashboardStats.stats.productsAnalyzed.changeType,
+        icon: Target,
+        color: "bg-primary",
+        comingSoon: false,
+      },
+      {
+        title: "ROI Médio",
+        value: "Em breve",
+        change: "",
+        changeType: "positive" as const,
+        icon: DollarSign,
+        color: "bg-muted",
+        comingSoon: true,
+      },
+    ]
+  }, [dashboardStats])
+
+  const recentActivities = useMemo(() => {
+    if (!dashboardStats || !dashboardStats.recentActivities.length) {
+      return []
+    }
+
+    return dashboardStats.recentActivities.slice(0, 4).map(activity => ({
+      action: activity.action,
+      description: activity.description,
+      time: activity.time,
+      type: activity.type,
+      icon: getIconForType(activity.type),
+    }))
+  }, [dashboardStats])
+
+  function getIconForType(type: string) {
+    switch (type) {
+      case 'copy': return Zap
+      case 'ads': return Target
+      case 'canvas': return Layers3
+      case 'funnel': return BarChart3
+      default: return Activity
+    }
+  }
 
   const quickActions = [
     {
@@ -209,42 +248,61 @@ export default function DashboardPage() {
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <Card
-              key={stat.title}
-              className="bg-card shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                  <Icon className={`h-5 w-5 ${stat.comingSoon ? 'text-muted-foreground' : 'text-white'}`} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                {stat.comingSoon ? (
-                  <>
-                    <div className="text-2xl font-bold text-muted-foreground mb-2">Em breve</div>
-                    <div className="flex items-center space-x-1 text-sm">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Requer integração</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
-                    <div className="flex items-center space-x-1 text-sm">
-                      <ArrowUpRight className="h-4 w-4 text-primary" />
-                      <span className="text-primary font-semibold">{stat.change}</span>
-                      <span className="text-muted-foreground">vs mês anterior</span>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )
-        })}
+        {isLoadingStats ? (
+          <>
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="bg-card shadow-lg">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                  <div className="w-10 h-10 bg-muted rounded-xl animate-pulse"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 w-20 bg-muted rounded mb-2 animate-pulse"></div>
+                  <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : (
+          stats.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <Card
+                key={stat.title}
+                className="bg-card shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
+                  <div className={`w-10 h-10 ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
+                    <Icon className={`h-5 w-5 ${stat.comingSoon ? 'text-muted-foreground' : 'text-white'}`} />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {stat.comingSoon ? (
+                    <>
+                      <div className="text-2xl font-bold text-muted-foreground mb-2">Em breve</div>
+                      <div className="flex items-center space-x-1 text-sm">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">Requer integração</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
+                      {stat.change && (
+                        <div className="flex items-center space-x-1 text-sm">
+                          <ArrowUpRight className={`h-4 w-4 ${stat.changeType === 'positive' ? 'text-primary' : 'text-red-500'}`} />
+                          <span className={`font-semibold ${stat.changeType === 'positive' ? 'text-primary' : 'text-red-500'}`}>{stat.change}</span>
+                          <span className="text-muted-foreground">vs mês anterior</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })
+        )}
       </div>
 
       <div>
@@ -289,29 +347,50 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity, index) => {
-                const Icon = activity.icon
-                return (
-                  <div
-                    key={index}
-                    className="flex items-start space-x-4 p-4 rounded-xl hover:bg-accent transition-colors"
-                  >
-                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-semibold text-foreground">{activity.action}</p>
-                      <p className="text-muted-foreground">{activity.description}</p>
-                      <p className="text-sm text-muted-foreground flex items-center">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {activity.time}
-                      </p>
+            {isLoadingStats ? (
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-start space-x-4 p-4 rounded-xl animate-pulse">
+                    <div className="w-10 h-10 bg-muted rounded-xl"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded w-1/3"></div>
+                      <div className="h-3 bg-muted rounded w-2/3"></div>
+                      <div className="h-3 bg-muted rounded w-1/4"></div>
                     </div>
                   </div>
-                )
-              })}
-            </div>
+                ))}
+              </div>
+            ) : recentActivities.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivities.map((activity, index) => {
+                  const Icon = activity.icon
+                  return (
+                    <div
+                      key={index}
+                      className="flex items-start space-x-4 p-4 rounded-xl hover:bg-accent transition-colors"
+                    >
+                      <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="font-semibold text-foreground">{activity.action}</p>
+                        <p className="text-muted-foreground">{activity.description}</p>
+                        <p className="text-sm text-muted-foreground flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {activity.time}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                <p className="text-muted-foreground">Nenhuma atividade recente</p>
+                <p className="text-sm text-muted-foreground mt-2">Comece gerando sua primeira copy!</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -323,31 +402,58 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-muted-foreground">Copies geradas</span>
-                  <span className="font-bold text-foreground text-lg">23</span>
+            {isLoadingStats ? (
+              <div className="space-y-6">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded"></div>
                 </div>
-                <Progress value={85} className="h-3" />
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded"></div>
+                </div>
+                <div className="animate-pulse space-y-3">
+                  <div className="h-4 bg-muted rounded w-3/4"></div>
+                  <div className="h-3 bg-muted rounded"></div>
+                </div>
               </div>
+            ) : dashboardStats ? (
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">Copies geradas</span>
+                    <span className="font-bold text-foreground text-lg">{dashboardStats.performance.copiesGenerated}</span>
+                  </div>
+                  <Progress 
+                    value={dashboardStats.performance.copiesGenerated > 0 ? Math.min(100, (dashboardStats.performance.copiesGenerated / 30) * 100) : 0} 
+                    className="h-3" 
+                  />
+                </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-muted-foreground">Taxa de sucesso</span>
-                  <span className="font-bold text-foreground text-lg">92%</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">Taxa de sucesso</span>
+                    <span className="font-bold text-foreground text-lg">{dashboardStats.performance.successRate}%</span>
+                  </div>
+                  <Progress value={dashboardStats.performance.successRate} className="h-3" />
                 </div>
-                <Progress value={92} className="h-3" />
-              </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-muted-foreground">Produtos analisados</span>
-                  <span className="font-bold text-foreground text-lg">8</span>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-muted-foreground">Produtos analisados</span>
+                    <span className="font-bold text-foreground text-lg">{dashboardStats.performance.productsAnalyzed}</span>
+                  </div>
+                  <Progress 
+                    value={dashboardStats.performance.productsAnalyzed > 0 ? Math.min(100, (dashboardStats.performance.productsAnalyzed / 15) * 100) : 0} 
+                    className="h-3" 
+                  />
                 </div>
-                <Progress value={60} className="h-3" />
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Nenhum dado disponível</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
