@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase-client'
+import { createClient } from '@supabase/supabase-js'
 
 export interface DashboardMetrics {
   totalGenerations: number
@@ -12,9 +12,15 @@ export interface DashboardMetrics {
 }
 
 export async function getDashboardMetrics(userId: string): Promise<DashboardMetrics> {
-  if (!supabaseAdmin) {
-    throw new Error('Supabase Admin não configurado')
-  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
 
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -32,14 +38,14 @@ export async function getDashboardMetrics(userId: string): Promise<DashboardMetr
     canvasResult,
     funnelResult
   ] = await Promise.all([
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', startOfMonth.toISOString()),
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', lastMonth.toISOString()).lte('created_at', endOfLastMonth.toISOString()),
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', last7Days.toISOString()),
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'copy'),
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'ads'),
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'canvas'),
-    supabaseAdmin.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'funnel')
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', startOfMonth.toISOString()),
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', lastMonth.toISOString()).lte('created_at', endOfLastMonth.toISOString()),
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).gte('created_at', last7Days.toISOString()),
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'copy'),
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'ads'),
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'canvas'),
+    supabase.from('generations').select('*', { count: 'exact', head: true }).eq('user_id', userId).eq('type', 'funnel')
   ])
 
   const totalGenerations = totalResult.count || 0
@@ -64,12 +70,17 @@ export async function getDashboardMetrics(userId: string): Promise<DashboardMetr
 }
 
 export async function getRecentActivities(userId: string, limit: number = 10) {
-  if (!supabaseAdmin) {
-    console.error('Supabase Admin não configurado')
-    return []
-  }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await supabase
     .from('generations')
     .select('*')
     .eq('user_id', userId)
