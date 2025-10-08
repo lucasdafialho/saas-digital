@@ -251,13 +251,13 @@ export default function PlanosPage() {
 
                 <div className="pt-4 border-t border-border">
                   {isCurrentPlan ? (
-                    <Badge className="w-full justify-center py-3 text-sm font-semibold" variant="secondary">
+                    <Badge className="w-full justify-center py-3 h-12 text-sm font-semibold" variant="secondary">
                       <Check className="w-4 h-4 mr-2" />
                       Plano Atual
                     </Badge>
                   ) : plan.showButton ? (
                     <Button
-                      className={`w-full py-5 text-base font-bold shadow-lg ${
+                      className={`w-full h-12 text-base font-bold shadow-lg ${
                         plan.popular 
                           ? "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white" 
                           : ""

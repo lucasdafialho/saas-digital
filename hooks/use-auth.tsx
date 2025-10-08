@@ -212,8 +212,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const logout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
+    try {
+      await supabase.auth.signOut({ scope: 'global' })
+      setUser(null)
+      
+      if (typeof window !== 'undefined') {
+        localStorage.clear()
+        sessionStorage.clear()
+        
+        window.location.href = '/'
+      }
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error)
+      setUser(null)
+      if (typeof window !== 'undefined') {
+        window.location.href = '/'
+      }
+    }
   }
 
   return (
