@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone, CreditCard } from "lucide-react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
+import { useState } from "react"
 
 type NavEntry =
   | { type: "item"; name: string; href: string; icon: any }
@@ -48,7 +48,6 @@ export default function DashboardLayout({
 }) {
   const { user, logout, isLoading } = useAuth()
   const pathname = usePathname()
-  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const planLabels: Record<string, string> = {
@@ -56,12 +55,6 @@ export default function DashboardLayout({
     starter: "Starter",
   }
   const planDisplayName = user?.plan ? planLabels[user.plan] ?? "Gratuito" : "Gratuito"
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.replace('/login')
-    }
-  }, [user, isLoading, router])
 
   const handleLogout = async () => {
     await logout()

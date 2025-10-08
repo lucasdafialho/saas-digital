@@ -27,19 +27,13 @@ export default function RegisterPage() {
   const [isTermsOpen, setIsTermsOpen] = useState(false)
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false)
 
-  const { register, user, isLoading: authLoading } = useAuth()
+  const { register } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     setIsLoading(false)
     setError("")
   }, [])
-
-  useEffect(() => {
-    if (!authLoading && user) {
-      router.replace('/dashboard')
-    }
-  }, [user, authLoading, router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
@@ -67,8 +61,7 @@ export default function RegisterPage() {
 
     try {
       await register(formData.name, formData.email, formData.password)
-      router.push("/dashboard")
-      router.refresh()
+      router.replace("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao criar conta. Tente novamente.")
       setIsLoading(false)

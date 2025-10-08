@@ -32,26 +32,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
     try {
+      console.log('📊 Carregando perfil do usuário:', authUser.id)
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
         .single()
 
+      if (error) {
+        console.warn('⚠️ Erro ao buscar perfil, usando dados do auth:', error.message)
+      }
+
       if (error || !profile) {
-        return {
+        const fallbackUser = {
           id: authUser.id,
           name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
           email: authUser.email || '',
-          plan: 'free',
+          plan: 'free' as const,
           createdAt: authUser.created_at,
           generationsUsed: 0
         }
+        console.log('✅ Usando perfil fallback:', fallbackUser.email)
+        return fallbackUser
       }
 
       const typedProfile = profile as any
 
-      return {
+      const userProfile = {
         id: typedProfile.id,
         name: typedProfile.name,
         email: typedProfile.email,
@@ -59,7 +66,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         createdAt: typedProfile.created_at,
         generationsUsed: typedProfile.generations_used || 0
       }
+      console.log('✅ Perfil carregado:', userProfile.email, 'plano:', userProfile.plan)
+      return userProfile
     } catch (err) {
+      console.error('❌ Exceção ao carregar perfil:', err)
       return {
         id: authUser.id,
         name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
@@ -97,19 +107,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true
 
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('⏱️ Auth timeout - forçando loading = false')
+        setIsLoading(false)
+      }
+    }, 8000)
+
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        console.log('🔐 Inicializando autenticação...')
+        const { data: { session }, error } = await supabase.auth.getSession()
 
-        if (mounted && session?.user) {
-          const userProfile = await loadUserProfile(session.user)
-          setUser(userProfile)
+        if (error) {
+          console.error('❌ Erro ao obter sessão:', error)
+          if (mounted) {
+            setUser(null)
+            setIsLoading(false)
+            clearTimeout(safetyTimeout)
+          }
+          return
+        }
+
+        if (mounted) {
+          if (session?.user) {
+            console.log('✅ Sessão encontrada:', session.user.email)
+            const userProfile = await loadUserProfile(session.user)
+            setUser(userProfile)
+          } else {
+            console.log('ℹ️ Nenhuma sessão ativa')
+            setUser(null)
+          }
+          setIsLoading(false)
+          clearTimeout(safetyTimeout)
         }
       } catch (err) {
-        console.error('Erro ao inicializar auth:', err)
-      } finally {
+        console.error('❌ Erro ao inicializar auth:', err)
         if (mounted) {
+          setUser(null)
           setIsLoading(false)
+          clearTimeout(safetyTimeout)
         }
       }
     }
@@ -117,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state changed:', event, session?.user?.email || 'no user')
       if (!mounted) return
 
       if (session?.user) {
@@ -125,12 +163,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null)
       }
-
-      setIsLoading(false)
     })
 
     return () => {
       mounted = false
+      clearTimeout(safetyTimeout)
       subscription.unsubscribe()
     }
   }, [])

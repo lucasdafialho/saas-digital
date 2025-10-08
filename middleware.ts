@@ -36,6 +36,21 @@ export async function middleware(request: NextRequest) {
   }
 
   const user = session?.user
+  const pathname = request.nextUrl.pathname
+  const isAuthPage = pathname === '/login' || pathname === '/register'
+  const isDashboard = pathname.startsWith('/dashboard')
+
+  if (!user && isDashboard) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isAuthPage) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
