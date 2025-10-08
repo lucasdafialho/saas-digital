@@ -31,10 +31,17 @@ export async function trackGeneration(params: {
   metadata?: any
 }): Promise<void> {
   try {
-    await saveGeneration(params.userId, params.type, params.metadata || {})
+    console.log('📝 Iniciando tracking de geração:', { userId: params.userId, type: params.type })
+    
+    const saved = await saveGeneration(params.userId, params.type, params.metadata || {})
+    console.log('✅ Geração salva, ID:', saved?.id)
+    
     await incrementGenerationCount(params.userId)
+    console.log('✅ Contador incrementado')
   } catch (error) {
-    console.error('Erro ao rastrear geração:', error)
+    console.error('❌ ERRO CRÍTICO ao rastrear geração:', error)
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
+    throw error
   }
 }
 
@@ -44,6 +51,9 @@ export async function saveGeneration(
   content: any
 ) {
   const supabaseAdmin = getSupabaseAdmin()
+  
+  console.log('💾 Salvando geração:', { userId, type, hasContent: !!content })
+  
   const { data, error } = await supabaseAdmin
     .from('generations')
     .insert({
@@ -52,14 +62,19 @@ export async function saveGeneration(
       content
     })
     .select()
-    .single()
 
   if (error) {
-    console.error('Erro ao salvar geração:', error)
+    console.error('❌ Erro ao salvar geração no banco:', error)
     throw error
   }
 
-  return data
+  if (!data || data.length === 0) {
+    console.error('❌ Nenhum dado retornado após insert')
+    throw new Error('Falha ao salvar geração - nenhum dado retornado')
+  }
+
+  console.log('✅ Geração salva com sucesso:', data[0]?.id)
+  return data[0]
 }
 
 export async function getUserGenerations(userId: string, type?: 'ads' | 'copy' | 'funnel' | 'canvas') {
