@@ -27,22 +27,14 @@ export async function middleware(request: NextRequest) {
 
   const {
     data: { session },
-    error
   } = await supabase.auth.getSession()
 
   const user = session?.user
   const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
-  const isAuthPage = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register'
 
   if (!user && isDashboard) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  if (user && session && isAuthPage) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 

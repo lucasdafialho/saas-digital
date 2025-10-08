@@ -27,13 +27,19 @@ export default function RegisterPage() {
   const [isTermsOpen, setIsTermsOpen] = useState(false)
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false)
 
-  const { register } = useAuth()
+  const { register, user, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     setIsLoading(false)
     setError("")
   }, [])
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/dashboard')
+    }
+  }, [user, authLoading, router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
