@@ -32,19 +32,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (authUser: SupabaseUser): Promise<User | null> => {
     try {
-      console.log('📊 Carregando perfil do usuário:', authUser.id)
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email, plan, created_at, generations_used')
         .eq('id', authUser.id)
-        .single()
-
-      if (error) {
-        console.warn('⚠️ Erro ao buscar perfil, usando dados do auth:', error.message)
-      }
+        .maybeSingle()
 
       if (error || !profile) {
-        const fallbackUser = {
+        return {
           id: authUser.id,
           name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
           email: authUser.email || '',
@@ -52,24 +47,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           createdAt: authUser.created_at,
           generationsUsed: 0
         }
-        console.log('✅ Usando perfil fallback:', fallbackUser.email)
-        return fallbackUser
       }
 
-      const typedProfile = profile as any
-
-      const userProfile = {
-        id: typedProfile.id,
-        name: typedProfile.name,
-        email: typedProfile.email,
-        plan: (typedProfile.plan || 'free') as "free" | "starter" | "pro",
-        createdAt: typedProfile.created_at,
-        generationsUsed: typedProfile.generations_used || 0
+      return {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        plan: (profile.plan || 'free') as "free" | "starter" | "pro",
+        createdAt: profile.created_at,
+        generationsUsed: profile.generations_used || 0
       }
-      console.log('✅ Perfil carregado:', userProfile.email, 'plano:', userProfile.plan)
-      return userProfile
     } catch (err) {
-      console.error('❌ Exceção ao carregar perfil:', err)
       return {
         id: authUser.id,
         name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
@@ -83,70 +71,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      console.log("🔄 Atualizando dados do usuário...")
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error("❌ Erro ao atualizar usuário:", error)
-        return
-      }
+      const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
-        console.log("👤 Sessão encontrada, recarregando perfil...")
         const userProfile = await loadUserProfile(session.user)
         setUser(userProfile)
-        console.log("✅ Usuário atualizado")
       } else {
-        console.log("⚠️ Nenhuma sessão encontrada")
         setUser(null)
       }
     } catch (err) {
-      console.error('❌ Erro ao atualizar usuário:', err)
+      console.error('Erro ao atualizar usuário:', err)
     }
   }
 
   useEffect(() => {
     let mounted = true
 
-    const safetyTimeout = setTimeout(() => {
-      if (mounted) {
-        console.warn('⏱️ Auth timeout - forçando loading = false')
-        setIsLoading(false)
-      }
-    }, 8000)
-
     const initAuth = async () => {
       try {
-        console.log('🔐 Inicializando autenticação...')
-        const { data: { session }, error } = await supabase.auth.getSession()
+        const { data: { session } } = await supabase.auth.getSession()
 
-        if (error) {
-          console.error('❌ Erro ao obter sessão:', error)
+        if (!mounted) return
+
+        if (session?.user) {
+          const userProfile = await loadUserProfile(session.user)
           if (mounted) {
-            setUser(null)
-            setIsLoading(false)
-            clearTimeout(safetyTimeout)
-          }
-          return
-        }
-
-        if (mounted) {
-          if (session?.user) {
-            console.log('✅ Sessão encontrada:', session.user.email)
-            const userProfile = await loadUserProfile(session.user)
             setUser(userProfile)
-          } else {
-            console.log('ℹ️ Nenhuma sessão ativa')
-            setUser(null)
+            setIsLoading(false)
           }
+        } else {
+          setUser(null)
           setIsLoading(false)
-          clearTimeout(safetyTimeout)
         }
       } catch (err) {
-        console.error('❌ Erro ao inicializar auth:', err)
+        console.error('Erro ao inicializar auth:', err)
         if (mounted) {
           setUser(null)
           setIsLoading(false)
-          clearTimeout(safetyTimeout)
         }
       }
     }
@@ -154,12 +115,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event, session?.user?.email || 'no user')
       if (!mounted) return
 
       if (session?.user) {
         const userProfile = await loadUserProfile(session.user)
-        setUser(userProfile)
+        if (mounted) {
+          setUser(userProfile)
+        }
       } else {
         setUser(null)
       }
@@ -167,7 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       mounted = false
-      clearTimeout(safetyTimeout)
       subscription.unsubscribe()
     }
   }, [])
