@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase"
 import { MercadoPagoService } from "@/lib/mercadopago"
+import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit"
+
+const webhookRateLimit = rateLimit({
+  ...RATE_LIMITS.webhook.mercadopago,
+  keyPrefix: 'webhook-mp'
+})
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = await webhookRateLimit(request)
+  if (rateLimitResult) {
+    return rateLimitResult
+  }
+
   try {
     if (!supabaseAdmin) {
       console.error("❌ Supabase Admin não configurado")
@@ -12,7 +23,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const headers = Object.fromEntries(request.headers.entries())
 
-    console.log("🔔 Webhook MercadoPago recebido:", JSON.stringify(body, null, 2))
+    console.log("🔔 Webhook MercadoPago recebido")
 
     const mpService = new MercadoPagoService()
     const isValid = mpService.validateWebhookSignature(headers, body)

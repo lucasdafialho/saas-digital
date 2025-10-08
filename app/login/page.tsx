@@ -33,6 +33,24 @@ export default function LoginPage() {
     setError("")
 
     try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          setError(`Muitas tentativas de login. Tente novamente em ${data.retryAfter} segundos.`)
+        } else {
+          setError(data.error || 'Erro ao fazer login')
+        }
+        setIsLoading(false)
+        return
+      }
+
       await login(email, password)
       router.replace("/dashboard")
     } catch (err) {

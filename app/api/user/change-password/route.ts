@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import { createClient as createBrowserClient } from '@supabase/supabase-js'
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { validateAndSanitizePassword } from '@/lib/sanitize'
+
+const changePasswordRateLimit = rateLimit({
+  ...RATE_LIMITS.auth.changePassword,
+  keyPrefix: 'change-password',
+  message: 'Muitas tentativas de alteração de senha. Tente novamente mais tarde.'
+})
 
 export async function POST(request: NextRequest) {
+  const rateLimitResult = await changePasswordRateLimit(request)
+  if (rateLimitResult) {
+    return rateLimitResult
+  }
+
   try {
     const supabase = await createClient()
     
@@ -15,22 +27,17 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { currentPassword, newPassword } = body
 
-    // Validar campos obrigatórios
-    if (!currentPassword) {
+    if (!currentPassword || typeof currentPassword !== 'string') {
       return NextResponse.json({ error: 'A senha atual é obrigatória' }, { status: 400 })
     }
 
-    if (!newPassword || newPassword.length < 6) {
-      return NextResponse.json({ error: 'A nova senha deve ter no mínimo 6 caracteres' }, { status: 400 })
+    const passwordValidation = validateAndSanitizePassword(newPassword)
+    if (!passwordValidation.valid) {
+      return NextResponse.json({ error: passwordValidation.error }, { status: 400 })
     }
 
-    // Validar senha atual com Supabase Auth
-    const supabaseClient = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+    const verifyClient = await createClient()
+    const { error: signInError } = await verifyClient.auth.signInWithPassword({
       email: user.email!,
       password: currentPassword
     })
@@ -39,13 +46,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Senha atual incorreta' }, { status: 400 })
     }
 
-    // Atualizar senha no Supabase Auth
     const { error: updateError } = await supabase.auth.updateUser({
       password: newPassword
     })
 
     if (updateError) {
-      console.error('Erro ao atualizar senha:', updateError)
+      console.error('Erro ao atualizar senha')
       return NextResponse.json({ error: 'Erro ao atualizar senha' }, { status: 500 })
     }
 
@@ -54,7 +60,7 @@ export async function POST(request: NextRequest) {
       message: 'Senha atualizada com sucesso'
     })
   } catch (error) {
-    console.error('Erro ao alterar senha:', error)
+    console.error('Erro ao alterar senha')
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

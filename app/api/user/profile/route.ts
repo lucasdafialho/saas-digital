@@ -1,21 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase-server"
+import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { sanitizeInput } from '@/lib/sanitize'
+
+const profileRateLimit = rateLimit({
+  ...RATE_LIMITS.api.profile,
+  keyPrefix: 'profile'
+})
 
 export async function GET(request: NextRequest) {
-  try {
-    // Obter token de autenticação do header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: "Token de autenticação não fornecido" },
-        { status: 401 }
-      )
-    }
+  const rateLimitResult = await profileRateLimit(request)
+  if (rateLimitResult) {
+    return rateLimitResult
+  }
 
-    // Verificar usuário autenticado
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
+  try {
+    const supabase = await createClient()
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json(
@@ -24,7 +26,6 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Buscar perfil do usuário
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Erro ao buscar perfil:', error)
+    console.error('Erro ao buscar perfil')
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -58,18 +59,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: "Token de autenticação não fornecido" },
-        { status: 401 }
-      )
-    }
+  const rateLimitResult = await profileRateLimit(request)
+  if (rateLimitResult) {
+    return rateLimitResult
+  }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
+  try {
+    const supabase = await createClient()
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json(
@@ -81,17 +79,29 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { name } = body
 
-    if (!name) {
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
-        { error: "Nome é obrigatório" },
+        { error: "Nome é obrigatório e deve ser válido" },
         { status: 400 }
       )
     }
 
-    // Atualizar perfil
+    const sanitizedName = sanitizeInput(name, { 
+      maxLength: 100,
+      allowHtml: false,
+      stripScripts: true
+    })
+
+    if (sanitizedName.length === 0) {
+      return NextResponse.json(
+        { error: "Nome inválido após sanitização" },
+        { status: 400 }
+      )
+    }
+
     const { data: profile, error: updateError } = await supabase
       .from('profiles')
-      .update({ name })
+      .update({ name: sanitizedName })
       .eq('id', user.id)
       .select()
       .single()
@@ -114,7 +124,7 @@ export async function PATCH(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Erro ao atualizar perfil:', error)
+    console.error('Erro ao atualizar perfil')
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

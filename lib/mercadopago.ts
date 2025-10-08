@@ -82,14 +82,15 @@ export class MercadoPagoService {
 
   validateWebhookSignature(headers: any, body: any): boolean {
     if (!this.webhookSecret) {
-      console.warn("MERCADOPAGO_WEBHOOK_SECRET não configurado, pulando validação")
-      return true
+      console.error("🔴 SEGURANÇA: MERCADOPAGO_WEBHOOK_SECRET não configurado - RECUSANDO webhook")
+      return false
     }
 
     const xSignature = headers['x-signature']
     const xRequestId = headers['x-request-id']
 
     if (!xSignature || !xRequestId) {
+      console.error("🔴 SEGURANÇA: Headers de assinatura ausentes")
       return false
     }
 
@@ -98,6 +99,7 @@ export class MercadoPagoService {
     const v1 = parts.find((part: string) => part.startsWith('v1='))?.replace('v1=', '')
 
     if (!ts || !v1) {
+      console.error("🔴 SEGURANÇA: Formato de assinatura inválido")
       return false
     }
 
@@ -106,7 +108,12 @@ export class MercadoPagoService {
     hmac.update(manifest)
     const signature = hmac.digest('hex')
 
-    return signature === v1
+    const isValid = signature === v1
+    if (!isValid) {
+      console.error("🔴 SEGURANÇA: Assinatura de webhook inválida")
+    }
+
+    return isValid
   }
 
   async createPlan(plan: MercadoPagoPreapprovalPlan): Promise<MercadoPagoPreapprovalPlan> {
