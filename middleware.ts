@@ -43,13 +43,13 @@ export async function middleware(request: NextRequest) {
   if (!user && isDashboard) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
   }
 
   if (user && isAuthPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+    return NextResponse.redirect(url, { headers: supabaseResponse.headers })
   }
 
   return supabaseResponse

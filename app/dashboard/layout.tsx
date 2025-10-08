@@ -60,7 +60,7 @@ export default function DashboardLayout({
     await logout()
   }
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -69,13 +69,6 @@ export default function DashboardLayout({
         </div>
       </div>
     )
-  }
-
-  if (!user) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
-    return null
   }
 
   return (
