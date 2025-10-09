@@ -19,7 +19,7 @@ interface AuthContextType {
   user: User | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string) => Promise<void>
+  register: (name: string, email: string, password: string) => Promise<{ needsEmailConfirmation: boolean }>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -263,27 +263,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Erro ao criar conta. Por favor, tente novamente.')
     }
 
+    // Se tem sessão, o email não precisa de confirmação (auto-confirm está ativo)
     if (data.session?.user) {
-      console.log('[AUTH] Registro bem-sucedido com sessão')
+      console.log('[AUTH] Registro bem-sucedido com sessão (sem confirmação de email)')
       const userProfile = await loadUserProfile(data.session.user)
       setUser(userProfile)
-    } else if (data.user && !data.session) {
-      console.log('[AUTH] Registro bem-sucedido, fazendo login automático...')
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      
-      if (signInError) {
-        console.error('[AUTH] Erro no login automático:', signInError)
-        throw new Error('Conta criada com sucesso! Por favor, faça login.')
-      }
-      
-      if (signInData.session?.user) {
-        const userProfile = await loadUserProfile(signInData.session.user)
-        setUser(userProfile)
-      }
+      return { needsEmailConfirmation: false }
     }
+    
+    // Se tem usuário mas não tem sessão, precisa confirmar email
+    if (data.user && !data.session) {
+      console.log('[AUTH] Registro bem-sucedido, aguardando confirmação de email')
+      return { needsEmailConfirmation: true }
+    }
+
+    return { needsEmailConfirmation: false }
   }, [loadUserProfile])
 
   const logout = useCallback(async () => {

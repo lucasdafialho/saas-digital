@@ -12,6 +12,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { getErrorMessage, isValidEmail, isValidPassword, isValidName, getPasswordRequirements, getPasswordStrength, getPasswordErrorMessage } from "@/lib/error-messages"
+import { EmailConfirmationModal } from "@/components/email-confirmation-modal"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -27,6 +28,7 @@ export default function RegisterPage() {
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [isTermsOpen, setIsTermsOpen] = useState(false)
   const [isPrivacyOpen, setIsPrivacyOpen] = useState(false)
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false)
 
   const { register } = useAuth()
   const router = useRouter()
@@ -96,8 +98,16 @@ export default function RegisterPage() {
     }
 
     try {
-      await register(formData.name, formData.email, formData.password)
-      router.replace("/dashboard")
+      const result = await register(formData.name, formData.email, formData.password)
+      
+      if (result.needsEmailConfirmation) {
+        // Mostrar modal de confirmação de email
+        setShowEmailConfirmation(true)
+        setIsLoading(false)
+      } else {
+        // Login automático bem-sucedido, redirecionar
+        router.replace("/dashboard")
+      }
     } catch (err) {
       console.error('Erro no registro:', err)
       setError(getErrorMessage(err))
@@ -334,6 +344,17 @@ export default function RegisterPage() {
           </Link>
         </div>
       </div>
+      
+      {showEmailConfirmation && (
+        <EmailConfirmationModal
+          email={formData.email}
+          onClose={() => {
+            setShowEmailConfirmation(false)
+            router.push("/login")
+          }}
+        />
+      )}
+      
       {isTermsOpen && (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsTermsOpen(false)} />

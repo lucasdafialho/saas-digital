@@ -14,10 +14,14 @@ export function getSupabaseAdmin(): SupabaseClient {
     throw new Error('Variáveis de ambiente do Supabase Admin não configuradas')
   }
 
+  // Service role bypassa RLS automaticamente
   supabaseAdminInstance = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
+    },
+    db: {
+      schema: 'public'
     }
   })
 

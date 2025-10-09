@@ -1,32 +1,38 @@
--- ============================================================================
--- CORRIGIR POLÍTICAS RLS DA TABELA GENERATIONS
--- ============================================================================
-
--- Desabilitar RLS temporariamente para permitir inserts do service role
-ALTER TABLE public.generations DISABLE ROW LEVEL SECURITY;
-
--- OU criar política que permite service role inserir para qualquer usuário
--- (Mantenha RLS ativado mas permita admin)
-
-ALTER TABLE public.generations ENABLE ROW LEVEL SECURITY;
+-- Corrigir políticas RLS para a tabela generations
+-- O problema é que o service role (backend) precisa poder inserir gerações
 
 -- Remover políticas antigas
-DROP POLICY IF EXISTS "generations_select_own" ON public.generations;
-DROP POLICY IF EXISTS "generations_insert_own" ON public.generations;
-DROP POLICY IF EXISTS "Service role can insert" ON public.generations;
-DROP POLICY IF EXISTS "Users can select own generations" ON public.generations;
+drop policy if exists "Usuários podem ver suas próprias gerações" on public.generations;
+drop policy if exists "Usuários podem inserir suas próprias gerações" on public.generations;
 
--- Política para SELECT: usuários veem apenas suas gerações
-CREATE POLICY "Users can select own generations"
-  ON public.generations FOR SELECT
-  USING (auth.uid() = user_id);
+-- Criar novas políticas que funcionam tanto para usuários quanto para service role
 
--- Política para INSERT: permite service role (backend) inserir para qualquer user
-CREATE POLICY "Service role can insert"
-  ON public.generations FOR INSERT
-  WITH CHECK (true);
+-- Política de SELECT: usuários podem ver suas próprias gerações
+create policy "Usuários podem ver suas próprias gerações"
+  on public.generations for select
+  using (
+    auth.uid() = user_id
+  );
 
--- Verificar políticas
-SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
-FROM pg_policies
-WHERE tablename = 'generations';
+-- Política de INSERT: permite inserção tanto por usuários quanto por service role
+create policy "Permitir inserção de gerações"
+  on public.generations for insert
+  with check (
+    -- Permite se for o próprio usuário OU se não houver auth.uid() (service role)
+    auth.uid() = user_id OR auth.uid() IS NULL
+  );
+
+-- Política de UPDATE: usuários podem atualizar suas próprias gerações
+create policy "Usuários podem atualizar suas próprias gerações"
+  on public.generations for update
+  using (auth.uid() = user_id);
+
+-- Política de DELETE: usuários podem deletar suas próprias gerações
+create policy "Usuários podem deletar suas próprias gerações"
+  on public.generations for delete
+  using (auth.uid() = user_id);
+
+-- Verificar se as políticas foram criadas
+select schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
+from pg_policies
+where tablename = 'generations';
