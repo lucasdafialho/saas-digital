@@ -11,6 +11,7 @@ import { Sparkles, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { getErrorMessage, isValidEmail, isValidPassword } from "@/lib/error-messages"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -32,7 +33,28 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
+    // Validações no frontend
+    if (!email || !password) {
+      setError("Por favor, preencha email e senha.")
+      setIsLoading(false)
+      return
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Por favor, insira um email válido.")
+      setIsLoading(false)
+      return
+    }
+
+    const passwordValidation = isValidPassword(password)
+    if (!passwordValidation.valid) {
+      setError(passwordValidation.message || "Senha inválida.")
+      setIsLoading(false)
+      return
+    }
+
     try {
+      // Verifica rate limit
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,18 +65,20 @@ export default function LoginPage() {
 
       if (!response.ok) {
         if (response.status === 429) {
-          setError(`Muitas tentativas de login. Tente novamente em ${data.retryAfter} segundos.`)
+          setError(`Muitas tentativas de login. Aguarde ${data.retryAfter || 60} segundos.`)
         } else {
-          setError(data.error || 'Erro ao fazer login')
+          setError(getErrorMessage(data.error || 'Erro ao fazer login'))
         }
         setIsLoading(false)
         return
       }
 
+      // Faz o login
       await login(email, password)
       router.replace("/dashboard")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Email ou senha inválidos")
+      console.error('Erro no login:', err)
+      setError(getErrorMessage(err))
       setIsLoading(false)
     }
   }
@@ -75,8 +99,11 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-md">
-                  {error}
+                <div className="p-4 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span className="flex-1">{error}</span>
                 </div>
               )}
 

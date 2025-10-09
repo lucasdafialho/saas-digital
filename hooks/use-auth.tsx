@@ -206,7 +206,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       console.error('[AUTH] Erro no login:', error)
-      throw error
+      
+      // Mensagens de erro amigáveis
+      if (error.message.includes('Invalid login credentials')) {
+        throw new Error('Email ou senha incorretos. Verifique seus dados e tente novamente.')
+      }
+      if (error.message.includes('Email not confirmed')) {
+        throw new Error('Por favor, confirme seu email antes de fazer login.')
+      }
+      if (error.message.includes('Too many requests')) {
+        throw new Error('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
+      }
+      
+      throw new Error('Erro ao fazer login. Por favor, tente novamente.')
     }
 
     if (data.session?.user) {
@@ -229,22 +241,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     if (error) {
-      if (error.message.includes('already registered')) {
-        console.log('[AUTH] Usuário já registrado, fazendo login...')
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        })
-        if (signInError) throw signInError
-        
-        if (signInData.session?.user) {
-          const userProfile = await loadUserProfile(signInData.session.user)
-          setUser(userProfile)
-        }
-        return
-      }
       console.error('[AUTH] Erro no registro:', error)
-      throw error
+      
+      // Mensagens de erro amigáveis
+      if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+        throw new Error('Este email já está cadastrado. Faça login ou recupere sua senha.')
+      }
+      if (error.message.includes('Password should contain at least one character of each') || 
+          error.message.includes('Password should be at least') ||
+          error.message.includes('Signup requires a valid password') ||
+          error.message.includes('weak password')) {
+        throw new Error('A senha deve ter pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e caracteres especiais (!@#$%...).')
+      }
+      if (error.message.includes('Invalid email')) {
+        throw new Error('Por favor, insira um email válido.')
+      }
+      if (error.message.includes('Too many requests') || error.message.includes('rate limit')) {
+        throw new Error('Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.')
+      }
+      
+      throw new Error('Erro ao criar conta. Por favor, tente novamente.')
     }
 
     if (data.session?.user) {
@@ -257,7 +273,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password
       })
-      if (signInError) throw signInError
+      
+      if (signInError) {
+        console.error('[AUTH] Erro no login automático:', signInError)
+        throw new Error('Conta criada com sucesso! Por favor, faça login.')
+      }
       
       if (signInData.session?.user) {
         const userProfile = await loadUserProfile(signInData.session.user)

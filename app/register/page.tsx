@@ -11,6 +11,7 @@ import { Sparkles, Eye, EyeOff, CheckCircle, X } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
+import { getErrorMessage, isValidEmail, isValidPassword, isValidName, getPasswordRequirements, getPasswordStrength, getPasswordErrorMessage } from "@/lib/error-messages"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -47,14 +48,49 @@ export default function RegisterPage() {
     setIsLoading(true)
     setError("")
 
+    // Validações no frontend
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError("Por favor, preencha todos os campos.")
+      setIsLoading(false)
+      return
+    }
+
+    const nameValidation = isValidName(formData.name)
+    if (!nameValidation.valid) {
+      setError(nameValidation.message || "Nome inválido.")
+      setIsLoading(false)
+      return
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setError("Por favor, insira um email válido.")
+      setIsLoading(false)
+      return
+    }
+
+    const passwordValidation = isValidPassword(formData.password)
+    if (!passwordValidation.valid) {
+      setError(passwordValidation.message || "Senha inválida.")
+      setIsLoading(false)
+      return
+    }
+
+    // Verifica requisitos mínimos de segurança e mostra o que está faltando
+    const passwordError = getPasswordErrorMessage(formData.password)
+    if (passwordError) {
+      setError(passwordError)
+      setIsLoading(false)
+      return
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      setError("As senhas não coincidem")
+      setError("As senhas não coincidem.")
       setIsLoading(false)
       return
     }
 
     if (!acceptTerms) {
-      setError("Você deve aceitar os termos de uso")
+      setError("Você deve aceitar os Termos de Uso e a Política de Privacidade.")
       setIsLoading(false)
       return
     }
@@ -63,21 +99,14 @@ export default function RegisterPage() {
       await register(formData.name, formData.email, formData.password)
       router.replace("/dashboard")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar conta. Tente novamente.")
+      console.error('Erro no registro:', err)
+      setError(getErrorMessage(err))
       setIsLoading(false)
     }
   }
 
-  const passwordStrength = (password: string) => {
-    let strength = 0
-    if (password.length >= 8) strength++
-    if (/[A-Z]/.test(password)) strength++
-    if (/[0-9]/.test(password)) strength++
-    if (/[^A-Za-z0-9]/.test(password)) strength++
-    return strength
-  }
-
-  const strength = passwordStrength(formData.password)
+  const passwordReqs = getPasswordRequirements(formData.password)
+  const passwordStrengthInfo = getPasswordStrength(formData.password)
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -94,8 +123,11 @@ export default function RegisterPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-md">
-                  {error}
+                <div className="p-4 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  <span className="flex-1">{error}</span>
                 </div>
               )}
 
@@ -148,22 +180,73 @@ export default function RegisterPage() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                
                 {formData.password && (
-                  <div className="flex space-x-1 mt-2">
-                    {[1, 2, 3, 4].map((level) => (
-                      <div
-                        key={level}
-                        className={`h-1 flex-1 rounded ${
-                          strength >= level
-                            ? strength <= 2
-                              ? "bg-red-500"
-                              : strength === 3
-                                ? "bg-yellow-500"
-                                : "bg-green-500"
-                            : "bg-muted"
-                        }`}
-                      />
-                    ))}
+                  <div className="space-y-2 mt-3">
+                    {/* Barra de força da senha */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 flex gap-1">
+                        {[1, 2, 3, 4, 5].map((level) => (
+                          <div
+                            key={level}
+                            className={`h-1.5 flex-1 rounded-full transition-all ${
+                              passwordStrengthInfo.strength >= level
+                                ? passwordStrengthInfo.color
+                                : "bg-muted"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      {passwordStrengthInfo.label && (
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {passwordStrengthInfo.label}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Requisitos da senha */}
+                    <div className="space-y-1.5 text-xs">
+                      <div className={`flex items-center gap-2 ${passwordReqs.minLength ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                        {passwordReqs.minLength ? (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-current" />
+                        )}
+                        <span>Mínimo de 8 caracteres</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordReqs.hasUpperCase ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                        {passwordReqs.hasUpperCase ? (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-current" />
+                        )}
+                        <span>Uma letra maiúscula (A-Z)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordReqs.hasLowerCase ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                        {passwordReqs.hasLowerCase ? (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-current" />
+                        )}
+                        <span>Uma letra minúscula (a-z)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordReqs.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                        {passwordReqs.hasNumber ? (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-current" />
+                        )}
+                        <span>Um número (0-9)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordReqs.hasSpecialChar ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}`}>
+                        {passwordReqs.hasSpecialChar ? (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        ) : (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-current" />
+                        )}
+                        <span>Um caractere especial (!@#$%^&*...)</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

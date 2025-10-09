@@ -4,6 +4,7 @@ import { getUserFromRequest } from "@/lib/auth-api"
 import { checkGenerationLimit } from "@/lib/generation-limits"
 import { rateLimitByUserId, RATE_LIMITS } from "@/lib/rate-limit"
 import { sanitizeInput, sanitizeObject } from "@/lib/sanitize"
+import { removeMarkdownFormatting } from "@/lib/text-formatter"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
 
     const items = splitCopies(text).map((content, index) => ({
       id: `${Date.now()}-${index + 1}`,
-      content,
+      content: removeMarkdownFormatting(content),
       type: safe.type,
       timestamp: new Date().toISOString(),
     }))

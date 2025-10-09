@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { getUserFromRequest } from "@/lib/auth-api"
 import { checkGenerationLimit } from "@/lib/generation-limits"
 import { trackGeneration } from "@/lib/generations"
+import { cleanMarkdownFromObject } from "@/lib/text-formatter"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
@@ -172,6 +173,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Failed to parse provider JSON" }, { status: 502 })
     }
 
+    // Remove formatação markdown do objeto
+    const cleanedStrategy = cleanMarkdownFromObject(parsed)
+
     await trackGeneration({
       userId: user.userId,
       type: 'ads',
@@ -186,7 +190,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true, strategy: parsed })
+    return NextResponse.json({ success: true, strategy: cleanedStrategy })
   } catch (error) {
     return NextResponse.json({ success: false, error: "Unexpected error" }, { status: 500 })
   }
