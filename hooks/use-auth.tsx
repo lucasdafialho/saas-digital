@@ -231,12 +231,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     console.log('[AUTH] Iniciando registro...')
+    
+    // Usar URL de produção ou localhost baseado no ambiente
+    const redirectUrl = process.env.NEXT_PUBLIC_SITE_URL 
+      ? `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`
+      : `${window.location.origin}/dashboard`
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name },
-        emailRedirectTo: `${window.location.origin}/dashboard`
+        emailRedirectTo: redirectUrl
       }
     })
 
