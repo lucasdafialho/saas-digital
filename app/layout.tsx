@@ -22,7 +22,7 @@ const montserrat = Montserrat({
 })
 
 export const metadata: Metadata = {
-  title: "Konvexy - Plataforma de Marketing Digital",
+  title: "Konvexy",
   description: "Plataforma profissional de marketing digital com IA para conversão e crescimento.",
   generator: "v0.app",
 }
