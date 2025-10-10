@@ -96,7 +96,8 @@ export class MercadoPagoService {
     if (!xSignature || !xRequestId) {
       secureLogger.security('Headers de assinatura ausentes', {
         hasSignature: !!xSignature,
-        hasRequestId: !!xRequestId
+        hasRequestId: !!xRequestId,
+        availableHeaders: Object.keys(headers)
       })
       return false
     }

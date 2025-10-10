@@ -51,35 +51,59 @@ export async function POST(request: NextRequest) {
       type: body.type,
       action: body.action,
       dataId: body.data?.id,
-      webhookId
+      webhookId,
+      hasSignature: !!headers['x-signature'],
+      hasRequestId: !!headers['x-request-id']
     })
 
     const mpService = new MercadoPagoService()
     
-    // Validar assinatura do webhook
-    let isValid = false
-    try {
-      isValid = mpService.validateWebhookSignature(headers, body)
-    } catch (error) {
-      secureLogger.security("Erro ao validar assinatura do webhook", {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        webhookId
-      })
-      return NextResponse.json({ error: "Webhook validation failed" }, { status: 401 })
-    }
+    // Validar assinatura do webhook (apenas em produção se o secret estiver configurado)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    const hasWebhookSecret = !!process.env.MERCADOPAGO_WEBHOOK_SECRET
+    
+    if (hasWebhookSecret) {
+      let isValid = false
+      try {
+        isValid = mpService.validateWebhookSignature(headers, body)
+      } catch (error) {
+        secureLogger.security("Erro ao validar assinatura do webhook", {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          webhookId
+        })
+        return NextResponse.json({ error: "Webhook validation failed" }, { status: 401 })
+      }
 
-    if (!isValid) {
-      secureLogger.security("Assinatura do webhook inválida", { webhookId })
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+      if (!isValid) {
+        secureLogger.security("Assinatura do webhook inválida", { webhookId })
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
+      }
+    } else if (!isDevelopment) {
+      // Em produção, o webhook secret é obrigatório
+      secureLogger.security("MERCADOPAGO_WEBHOOK_SECRET não configurado em produção", { webhookId })
+      return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 })
+    } else {
+      // Em desenvolvimento sem secret, apenas logar aviso
+      secureLogger.warn("Webhook processado sem validação de assinatura (desenvolvimento)", { webhookId })
     }
 
     // Processar pagamentos do Checkout Pro (PIX, Cartão, Boleto)
-    if (body.type === "payment") {
-      const paymentId = body.data.id
+    if (body.type === "payment" || body.action === "payment.updated" || body.action === "payment.created") {
+      const paymentId = body.data?.id
+      
+      if (!paymentId) {
+        secureLogger.warn("Webhook de pagamento sem ID", { 
+          type: body.type,
+          action: body.action,
+          webhookId 
+        })
+        processedWebhooks.set(webhookId, Date.now())
+        return NextResponse.json({ received: true, warning: "No payment ID" })
+      }
 
       try {
         // Buscar informações do pagamento
-        const payment = await mpService.getPayment(paymentId)
+        const payment = await mpService.getPayment(paymentId.toString())
         
         secureLogger.info("Pagamento recebido", {
           id: payment.id,
@@ -238,12 +262,23 @@ export async function POST(request: NextRequest) {
           })
         }
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
         secureLogger.error("Erro ao processar pagamento", {
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: errorMessage,
           paymentId,
-          webhookId
+          webhookId,
+          type: body.type,
+          action: body.action
         })
-        // Não marcar como processado em caso de erro para permitir retry
+        
+        // Se for erro de pagamento não encontrado, marcar como processado
+        if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+          secureLogger.warn("Pagamento não encontrado - marcando como processado", { paymentId, webhookId })
+          processedWebhooks.set(webhookId, Date.now())
+          return NextResponse.json({ received: true, warning: "Payment not found" })
+        }
+        
+        // Outros erros: não marcar como processado para permitir retry
         return NextResponse.json({ error: "Payment processing failed" }, { status: 500 })
       }
     }
