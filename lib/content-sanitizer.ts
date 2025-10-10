@@ -1,5 +1,3 @@
-import DOMPurify from 'isomorphic-dompurify'
-
 /**
  * Sanitiza conteúdo gerado por IA para prevenir XSS
  * Remove scripts, eventos onclick, iframes e outros elementos perigosos
@@ -7,14 +5,15 @@ import DOMPurify from 'isomorphic-dompurify'
 export function sanitizeAIContent(content: string): string {
   if (!content) return ''
 
-  const clean = DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: [
-      'b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'
-    ],
-    ALLOWED_ATTR: [],
-    KEEP_CONTENT: true
-  })
+  // Sanitização básica sem DOMPurify para evitar problemas no build
+  // Remove tags HTML perigosas mantendo apenas texto e formatação básica
+  let clean = content
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<embed\b[^>]*>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
 
   return clean
 }
@@ -25,16 +24,14 @@ export function sanitizeAIContent(content: string): string {
 export function sanitizeHTML(html: string): string {
   if (!html) return ''
 
-  const clean = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre',
-      'a', 'img', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'td', 'th'
-    ],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'title', 'class'],
-    ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
-    KEEP_CONTENT: true
-  })
+  // Sanitização básica sem DOMPurify
+  let clean = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/<embed\b[^>]*>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
 
   return clean
 }
@@ -45,10 +42,8 @@ export function sanitizeHTML(html: string): string {
 export function stripHTML(html: string): string {
   if (!html) return ''
 
-  const clean = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [],
-    KEEP_CONTENT: true
-  })
+  // Remove todas as tags HTML
+  const clean = html.replace(/<[^>]*>/g, '')
 
   return clean.trim()
 }
