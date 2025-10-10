@@ -270,7 +270,7 @@ export const PLANS = {
   },
   starter: {
     name: "Starter",
-    price: 49.9,
+    price: 1.0,
     limit: 100,
     features: [
       "100 copies geradas por mês",
