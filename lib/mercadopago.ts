@@ -86,8 +86,17 @@ export class MercadoPagoService {
   }
 
   validateWebhookSignature(headers: any, body: any): boolean {
-    // Se não há webhook secret configurado, FALHAR a validação
+    // Modo permissivo em desenvolvimento (REMOVER EM PRODUÇÃO!)
+    const isDevMode = process.env.NODE_ENV === 'development' || process.env.MERCADOPAGO_WEBHOOK_SKIP_VALIDATION === 'true'
+
+    // Se não há webhook secret configurado
     if (!this.webhookSecret) {
+      if (isDevMode) {
+        secureLogger.warn('⚠️ WEBHOOK_SECRET não configurado - MODO DESENVOLVIMENTO (validação ignorada)', {
+          source: 'mercadopago'
+        })
+        return true
+      }
       secureLogger.security('WEBHOOK_SECRET não configurado - REJEITANDO webhook', {
         source: 'mercadopago'
       })
@@ -98,11 +107,18 @@ export class MercadoPagoService {
     const xRequestId = headers['x-request-id']
 
     if (!xSignature || !xRequestId) {
-      secureLogger.security('Headers de assinatura ausentes - REJEITANDO webhook', {
+      secureLogger.warn('⚠️ Headers de assinatura ausentes', {
         hasSignature: !!xSignature,
         hasRequestId: !!xRequestId,
         availableHeaders: Object.keys(headers)
       })
+
+      // Modo permissivo: aceitar mesmo sem headers em desenvolvimento
+      if (isDevMode) {
+        secureLogger.warn('⚠️ Headers ausentes - MODO DESENVOLVIMENTO (validação ignorada)')
+        return true
+      }
+
       return false
     }
 

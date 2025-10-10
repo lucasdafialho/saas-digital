@@ -43,6 +43,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    // Verificar conexão com Supabase PRIMEIRO
+    if (!supabaseAdmin) {
+      secureLogger.error("❌ Supabase Admin não configurado")
+      return NextResponse.json({
+        error: "Database connection error"
+      }, { status: 500 })
+    }
+
     // VALIDAR ASSINATURA DO WEBHOOK
     const mpService = new MercadoPagoService()
     const headers = {
@@ -50,25 +58,28 @@ export async function POST(request: NextRequest) {
       'x-request-id': request.headers.get('x-request-id')
     }
 
+    // Log detalhado dos headers recebidos
+    secureLogger.info('🔍 Headers recebidos do webhook', {
+      hasXSignature: !!headers['x-signature'],
+      hasXRequestId: !!headers['x-request-id'],
+      allHeaders: Object.fromEntries(request.headers.entries())
+    })
+
     const isValid = mpService.validateWebhookSignature(headers, body)
 
     if (!isValid) {
       secureLogger.security('🚫 Webhook rejeitado - assinatura inválida', {
         dataId: body.data?.id,
-        type: body.type
+        type: body.type,
+        hasSecret: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
+        nodeEnv: process.env.NODE_ENV
       })
       return NextResponse.json({
         error: "Invalid signature"
       }, { status: 401 })
     }
 
-    // Verificar conexão com Supabase
-    if (!supabaseAdmin) {
-      secureLogger.error("❌ Supabase Admin não configurado")
-      return NextResponse.json({
-        error: "Database connection error"
-      }, { status: 500 })
-    }
+    secureLogger.info('✅ Webhook validado com sucesso!')
 
     // Gerar ID único mais robusto
     webhookId = `${body.id}_${body.data.id}_${Date.now()}`
@@ -111,10 +122,7 @@ export async function POST(request: NextRequest) {
       })
 
       try {
-        // Inicializar serviço do MercadoPago
-        const mpService = new MercadoPagoService()
-        
-        // Buscar detalhes completos do pagamento
+        // Buscar detalhes completos do pagamento (reutilizando mpService já criado)
         const payment = await mpService.getPayment(paymentId.toString())
 
         secureLogger.info("📋 Detalhes do pagamento obtidos", {
@@ -187,14 +195,6 @@ export async function POST(request: NextRequest) {
             amount: payment.transaction_amount,
             paymentId
           })
-
-          // Verificar conexão com Supabase
-          if (!supabaseAdmin) {
-            secureLogger.error("❌ Supabase Admin não configurado")
-            return NextResponse.json({
-              error: "Database connection error"
-            }, { status: 500 })
-          }
 
           // Buscar usuário pelo email
           const { data: profile, error: profileError } = await supabaseAdmin
