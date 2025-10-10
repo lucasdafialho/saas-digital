@@ -108,10 +108,16 @@ export default function CopyGeneratorPage() {
       return
     }
 
+    // Prevenir cliques duplos
+    if (isGenerating) {
+      return
+    }
+
     setIsGenerating(true)
 
     if (!csrfToken) {
       console.error('Token CSRF não disponível')
+      setIsGenerating(false)
       return
     }
 

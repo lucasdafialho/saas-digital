@@ -71,6 +71,7 @@ export default function AIToolsPage() {
 
   const handleGenerate = async () => {
     if (!form.product || !form.audience || !form.offer) return
+    if (isGenerating) return // Prevenir cliques duplos
     if (!csrfToken) {
       console.error('Token CSRF não disponível')
       return

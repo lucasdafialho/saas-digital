@@ -43,6 +43,7 @@ export default function CanvasPage() {
 
   const handleGenerate = async () => {
     if (!form.product || !form.audience || !form.offer || !form.objective) return
+    if (isGenerating) return // Prevenir cliques duplos
     if (!csrfToken) {
       console.error('Token CSRF não disponível')
       return
