@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     // Capturar headers
     headers = Object.fromEntries(request.headers.entries())
-    
+
     // Log inicial do webhook
     secureLogger.info("Webhook MercadoPago recebido", {
       type: body.type,
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     // Gerar ID único para idempotência
     const webhookId = `${body.type}_${body.data?.id}_${body.id}`
-    
+
     // Verificar se já foi processado
     if (processedWebhooks.has(webhookId)) {
       secureLogger.info("Webhook já processado", { webhookId })
@@ -90,35 +90,35 @@ export async function POST(request: NextRequest) {
     }
 
     const mpService = new MercadoPagoService()
-    
+
     // Validação da assinatura do webhook
     const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET
     const signature = headers['x-signature']
     const requestId = headers['x-request-id']
-    
+
     // Em produção, sempre validar a assinatura se o secret estiver configurado
     if (body.live_mode === true && webhookSecret) {
       // Se não tiver os headers necessários, rejeitar
       if (!signature || !requestId) {
-        secureLogger.security("Headers de assinatura ausentes em webhook de produção", { 
+        secureLogger.security("Headers de assinatura ausentes em webhook de produção", {
           webhookId,
           hasSignature: !!signature,
           hasRequestId: !!requestId
         })
         return NextResponse.json({ error: "Missing signature headers" }, { status: 401 })
       }
-      
+
       try {
         const isValid = mpService.validateWebhookSignature(headers, body)
-        
+
         if (!isValid) {
-          secureLogger.security("Assinatura do webhook inválida", { 
+          secureLogger.security("Assinatura do webhook inválida", {
             webhookId,
             liveMode: body.live_mode
           })
           return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
         }
-        
+
         secureLogger.info("Webhook validado com sucesso", { webhookId })
       } catch (validationError) {
         secureLogger.error("Erro na validação da assinatura", {
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
       }
     } else if (body.live_mode === true && !webhookSecret) {
       // Erro crítico: webhook de produção sem secret configurado
-      secureLogger.error("ERRO CRÍTICO: Webhook de produção sem MERCADOPAGO_WEBHOOK_SECRET", { 
+      secureLogger.error("ERRO CRÍTICO: Webhook de produção sem MERCADOPAGO_WEBHOOK_SECRET", {
         webhookId
       })
       return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 })
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     // Processar webhooks de pagamento
     if (body.type === "payment" && (body.action === "payment.updated" || body.action === "payment.created")) {
       const paymentId = body.data?.id
-      
+
       if (!paymentId) {
         secureLogger.warn("Webhook sem payment ID", { body })
         processedWebhooks.set(webhookId, Date.now())
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       try {
         // Buscar detalhes do pagamento na API do MercadoPago
         const payment = await mpService.getPayment(paymentId.toString())
-        
+
         secureLogger.info("Detalhes do pagamento obtidos", {
           id: payment.id,
           status: payment.status,
@@ -166,18 +166,18 @@ export async function POST(request: NextRequest) {
         if (payment.status === "approved") {
           const userEmail = payment.payer?.email
           const externalRef = payment.external_reference
-          
+
           // Validar dados necessários
           if (!userEmail) {
             secureLogger.warn("Pagamento sem email do pagador", { paymentId })
             processedWebhooks.set(webhookId, Date.now())
             return NextResponse.json({ received: true })
           }
-          
+
           if (!externalRef || !externalRef.includes("_")) {
-            secureLogger.warn("External reference inválida", { 
+            secureLogger.warn("External reference inválida", {
               externalRef,
-              paymentId 
+              paymentId
             })
             processedWebhooks.set(webhookId, Date.now())
             return NextResponse.json({ received: true })
@@ -189,10 +189,10 @@ export async function POST(request: NextRequest) {
 
           // Validar tipo de plano
           if (!["starter", "pro"].includes(planType)) {
-            secureLogger.warn("Tipo de plano inválido", { 
+            secureLogger.warn("Tipo de plano inválido", {
               planType,
               externalRef,
-              paymentId 
+              paymentId
             })
             processedWebhooks.set(webhookId, Date.now())
             return NextResponse.json({ received: true })
@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
           // Atualizar plano no perfil do usuário
           const { error: updateProfileError } = await supabaseAdmin
             .from('profiles')
-            .update({ 
+            .update({
               plan: planType,
               updated_at: new Date().toISOString()
             })
@@ -315,19 +315,19 @@ export async function POST(request: NextRequest) {
         }
       } catch (paymentError) {
         const errorMessage = paymentError instanceof Error ? paymentError.message : 'Unknown'
-        
+
         secureLogger.error("Erro ao processar pagamento", {
           error: errorMessage,
           paymentId,
           webhookId
         })
-        
+
         // Se o pagamento não foi encontrado, marcar como processado
         if (errorMessage.includes('404') || errorMessage.includes('not found')) {
           processedWebhooks.set(webhookId, Date.now())
           return NextResponse.json({ received: true })
         }
-        
+
         // Outros erros: permitir retry
         return NextResponse.json({ error: "Processing failed" }, { status: 500 })
       }
@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
     // Processar webhooks de assinatura recorrente
     if (body.type === "subscription_preapproval" || body.type === "subscription_authorized_payment") {
       const subscriptionId = body.data?.id
-      
+
       if (!subscriptionId) {
         secureLogger.warn("Webhook de assinatura sem ID", { body })
         processedWebhooks.set(webhookId, Date.now())
@@ -346,7 +346,7 @@ export async function POST(request: NextRequest) {
       try {
         // Buscar informações da assinatura
         const subscription = await mpService.getSubscription(subscriptionId.toString())
-        
+
         secureLogger.info("Assinatura atualizada", {
           id: subscription.id,
           status: subscription.status,
@@ -405,7 +405,7 @@ export async function POST(request: NextRequest) {
             if (shouldDowngrade) {
               const { error: downgradeError } = await supabaseAdmin
                 .from('profiles')
-                .update({ 
+                .update({
                   plan: 'free',
                   updated_at: new Date().toISOString()
                 })
@@ -456,18 +456,18 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     const errorStack = error instanceof Error ? error.stack : undefined
-    
+
     secureLogger.error("Erro geral ao processar webhook", {
       error: errorMessage,
       stack: errorStack,
       body: body ? JSON.stringify(body) : 'no body',
       headers: headers ? JSON.stringify(headers) : 'no headers'
     })
-    
+
     // Retornar erro 500 para erros não tratados
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: "Internal server error",
-      message: errorMessage 
+      message: errorMessage
     }, { status: 500 })
   }
 }

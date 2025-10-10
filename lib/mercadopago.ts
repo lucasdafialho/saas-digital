@@ -102,12 +102,24 @@ export class MercadoPagoService {
       return false
     }
 
-    const parts = xSignature.split(',')
-    const ts = parts.find((part: string) => part.startsWith('ts='))?.replace('ts=', '')
-    const v1 = parts.find((part: string) => part.startsWith('v1='))?.replace('v1=', '')
+    // Extrair ts e v1 do header x-signature
+    // Formato: "ts=1234567890,v1=hash"
+    const signatureParts = xSignature.split(',')
+    let ts = ''
+    let v1 = ''
+    
+    for (const part of signatureParts) {
+      const [key, value] = part.split('=')
+      if (key === 'ts') {
+        ts = value
+      } else if (key === 'v1') {
+        v1 = value
+      }
+    }
 
     if (!ts || !v1) {
       secureLogger.security('Formato de assinatura inválido', {
+        xSignature,
         hasTimestamp: !!ts,
         hasV1: !!v1
       })
@@ -128,18 +140,38 @@ export class MercadoPagoService {
       return false
     }
 
-    // Validar assinatura HMAC
-    const manifest = `id:${body.data?.id || ''};request-id:${xRequestId};ts:${ts};`
+    // Construir a string para validação
+    // Formato: id:{dataId};request-id:{xRequestId};ts:{ts};
+    const dataId = body.data?.id || ''
+    const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`
+    
+    // Gerar HMAC SHA256
     const hmac = crypto.createHmac('sha256', this.webhookSecret)
     hmac.update(manifest)
-    const signature = hmac.digest('hex')
+    const calculatedSignature = hmac.digest('hex')
 
-    const isValid = signature === v1
+    // Comparar assinaturas de forma segura (timing-safe)
+    let isValid = false
+    try {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(v1),
+        Buffer.from(calculatedSignature)
+      )
+    } catch (error) {
+      secureLogger.security('Erro ao comparar assinaturas', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        v1Length: v1.length,
+        calculatedLength: calculatedSignature.length
+      })
+      return false
+    }
 
     if (!isValid) {
       secureLogger.security('Assinatura de webhook inválida', {
-        expected: signature.substring(0, 10) + '...',
-        received: v1.substring(0, 10) + '...'
+        expected: v1.substring(0, 10) + '...',
+        calculated: calculatedSignature.substring(0, 10) + '...',
+        manifest,
+        dataId
       })
     }
 
