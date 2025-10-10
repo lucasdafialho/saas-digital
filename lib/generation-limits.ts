@@ -68,27 +68,9 @@ export async function checkGenerationLimit(userId: string, type: 'ads' | 'copy' 
 }
 
 export async function incrementGenerationCount(userId: string): Promise<void> {
-  try {
-    const supabaseAdmin = getSupabaseAdmin()
-
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('generations_used')
-      .eq('id', userId)
-      .single()
-
-    if (profile) {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ 
-          generations_used: (profile.generations_used || 0) + 1,
-          updated_at: new Date().toISOString()
-        } as any)
-        .eq('id', userId)
-    }
-  } catch (error) {
-    console.error('Erro ao incrementar contador de gerações:', error)
-  }
+  // Função desabilitada - a contagem é feita pela inserção na tabela generations
+  // O contador generations_used não é mais usado
+  return
 }
 
 export async function resetMonthlyGenerations(): Promise<void> {

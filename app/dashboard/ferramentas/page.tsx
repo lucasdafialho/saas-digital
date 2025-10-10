@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react"
 import { useCSRF } from "@/hooks/use-csrf"
+import { useGenerations } from "@/hooks/use-generations"
+import { LimitReachedModal } from "@/components/limit-reached-modal"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -54,7 +56,9 @@ const timeframes = ["7 dias", "14 dias", "30 dias", "60 dias"]
 
 export default function AIToolsPage() {
   const { token: csrfToken } = useCSRF()
+  const { used, limit, canGenerate } = useGenerations()
   const resultsRef = useRef<HTMLDivElement | null>(null)
+  const [showLimitModal, setShowLimitModal] = useState(false)
   const [selectedType, setSelectedType] = useState<string>(funnelTypes[0])
   const [form, setForm] = useState({
     product: "",
@@ -71,6 +75,13 @@ export default function AIToolsPage() {
 
   const handleGenerate = async () => {
     if (!form.product || !form.audience || !form.offer) return
+    
+    // Verificar limite antes de gerar
+    if (!canGenerate) {
+      setShowLimitModal(true)
+      return
+    }
+    
     if (isGenerating) return // Prevenir cliques duplos
     if (!csrfToken) {
       console.error('Token CSRF não disponível')
@@ -413,6 +424,13 @@ export default function AIToolsPage() {
           </Card>
         </div>
       </div>
+      
+      <LimitReachedModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        used={used}
+        limit={limit}
+      />
     </div>
   )
 }

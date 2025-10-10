@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useCSRF } from "@/hooks/use-csrf"
+import { useGenerations } from "@/hooks/use-generations"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { LimitReachedModal } from "@/components/limit-reached-modal"
 import {
   Copy,
   Heart,
@@ -90,6 +92,7 @@ const templates = {
 export default function CopyGeneratorPage() {
   const { user } = useAuth()
   const { token: csrfToken } = useCSRF()
+  const { used, limit, canGenerate } = useGenerations()
   const [selectedType, setSelectedType] = useState("headline")
   const [formData, setFormData] = useState({
     product: "",
@@ -102,9 +105,16 @@ export default function CopyGeneratorPage() {
   const [results, setResults] = useState<CopyResult[]>([])
   const [history, setHistory] = useState<CopyResult[]>([])
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [showLimitModal, setShowLimitModal] = useState(false)
 
   const handleGenerate = async () => {
     if (!formData.product || !formData.audience || !formData.benefit) {
+      return
+    }
+
+    // Verificar limite antes de gerar
+    if (!canGenerate) {
+      setShowLimitModal(true)
       return
     }
 
@@ -536,6 +546,13 @@ export default function CopyGeneratorPage() {
           </div>
         </div>
       </div>
+      
+      <LimitReachedModal
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
+        used={used}
+        limit={limit}
+      />
     </div>
   )
 }
