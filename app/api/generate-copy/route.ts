@@ -2,30 +2,53 @@ import { type NextRequest, NextResponse } from "next/server"
 import { trackGeneration, canUserGenerate } from "@/lib/generations"
 import { getUserFromRequest } from "@/lib/auth-api"
 import { checkGenerationLimit } from "@/lib/generation-limits"
-import { rateLimitByUserId, RATE_LIMITS } from "@/lib/rate-limit"
+import { rateLimitByUserId, RATE_LIMITS } from "@/lib/rate-limit-redis"
 import { sanitizeInput, sanitizeObject } from "@/lib/sanitize"
 import { removeMarkdownFormatting } from "@/lib/text-formatter"
+import { generateCopySchema, validateInput } from "@/lib/validators"
+import { sanitizeAIContent } from "@/lib/content-sanitizer"
+import secureLogger from "@/lib/logger"
+import { logSecurityEvent } from "@/lib/audit"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+
   try {
     const user = await getUserFromRequest(request)
-    
+
     if (!user) {
+      await logSecurityEvent({
+        type: 'unauthorized_access',
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-copy' },
+        severity: 'medium'
+      })
       return NextResponse.json({ success: false, error: "Usuário não autenticado" }, { status: 401 })
     }
 
-    const rateLimitCheck = rateLimitByUserId({
+    // Rate limiting com Redis
+    const rateLimitCheck = await rateLimitByUserId({
       ...RATE_LIMITS.api.generation,
       userId: user.userId,
       keyPrefix: 'generate-copy'
     })
 
     if (!rateLimitCheck.allowed) {
-      return NextResponse.json({ 
-        success: false, 
+      await logSecurityEvent({
+        type: 'rate_limit_exceeded',
+        userId: user.userId,
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-copy' },
+        severity: 'low'
+      })
+      return NextResponse.json({
+        success: false,
         error: rateLimitCheck.message,
         retryAfter: rateLimitCheck.retryAfter
       }, { status: 429 })
@@ -37,35 +60,38 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { type, product, audience, benefit, tone, context } = body || {}
 
-    if (!type || !product || !audience || !benefit) {
-      return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 })
+    // Validação com Zod
+    const validation = validateInput(generateCopySchema, body)
+    if (!validation.success) {
+      secureLogger.warn('Validação falhou em generate-copy', {
+        userId: user.userId,
+        error: validation.error,
+        issues: validation.issues
+      })
+      return NextResponse.json({
+        success: false,
+        error: validation.error,
+        details: validation.issues
+      }, { status: 400 })
     }
 
-    const sanitizedInput = sanitizeObject(body, {
-      type: { maxLength: 50, allowHtml: false },
-      product: { maxLength: 200, allowHtml: false },
-      audience: { maxLength: 200, allowHtml: false },
-      benefit: { maxLength: 200, allowHtml: false },
-      tone: { maxLength: 50, allowHtml: false },
-      context: { maxLength: 500, allowHtml: false }
-    })
+    const { type, product, audience, benefit, tone, context } = validation.data
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ success: false, error: "Missing API key" }, { status: 500 })
+      secureLogger.error('GEMINI_API_KEY não configurada')
+      return NextResponse.json({ success: false, error: "Serviço temporariamente indisponível" }, { status: 500 })
     }
 
-    const safe = {
-      type: sanitizedInput.type,
-      product: sanitizedInput.product,
-      audience: sanitizedInput.audience,
-      benefit: sanitizedInput.benefit,
-      tone: sanitizedInput.tone || "professional",
-      context: sanitizedInput.context || ""
-    }
-    const prompt = buildPrompt(safe)
+    const prompt = buildPrompt({
+      type,
+      product,
+      audience,
+      benefit,
+      tone,
+      context: context || ""
+    })
 
     const payload = {
       contents: [
@@ -123,8 +149,8 @@ export async function POST(request: NextRequest) {
 
     const items = splitCopies(text).map((content, index) => ({
       id: `${Date.now()}-${index + 1}`,
-      content: removeMarkdownFormatting(content),
-      type: safe.type,
+      content: sanitizeAIContent(removeMarkdownFormatting(content)),
+      type: type,
       timestamp: new Date().toISOString(),
     }))
 
@@ -132,18 +158,19 @@ export async function POST(request: NextRequest) {
       userId: user.userId,
       type: 'copy',
       metadata: {
-        copyType: safe.type,
-        product: safe.product,
-        audience: safe.audience,
-        benefit: safe.benefit,
-        tone: safe.tone,
+        copyType: type,
+        product: product,
+        audience: audience,
+        benefit: benefit,
+        tone: tone,
         generatedCount: items.length
       }
     })
 
     return NextResponse.json({ success: true, copies: items })
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Unexpected error" }, { status: 500 })
+    secureLogger.error('Erro em generate-copy', error)
+    return NextResponse.json({ success: false, error: "Erro ao processar solicitação" }, { status: 500 })
   }
 }
 

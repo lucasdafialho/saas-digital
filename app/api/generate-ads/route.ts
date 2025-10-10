@@ -3,16 +3,53 @@ import { getUserFromRequest } from "@/lib/auth-api"
 import { checkGenerationLimit } from "@/lib/generation-limits"
 import { trackGeneration } from "@/lib/generations"
 import { cleanMarkdownFromObject } from "@/lib/text-formatter"
+import { rateLimitByUserId, RATE_LIMITS } from "@/lib/rate-limit-redis"
+import { generateAdsSchema, validateInput } from "@/lib/validators"
+import secureLogger from "@/lib/logger"
+import { logSecurityEvent } from "@/lib/audit"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+
   try {
     const user = await getUserFromRequest(request)
-    
+
     if (!user) {
+      await logSecurityEvent({
+        type: 'unauthorized_access',
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-ads' },
+        severity: 'medium'
+      })
       return NextResponse.json({ success: false, error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    // Rate limiting
+    const rateLimitCheck = await rateLimitByUserId({
+      ...RATE_LIMITS.api.generation,
+      userId: user.userId,
+      keyPrefix: 'generate-ads'
+    })
+
+    if (!rateLimitCheck.allowed) {
+      await logSecurityEvent({
+        type: 'rate_limit_exceeded',
+        userId: user.userId,
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-ads' },
+        severity: 'low'
+      })
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.message,
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 })
     }
 
     const limitCheck = await checkGenerationLimit(user.userId, 'ads')
@@ -21,40 +58,36 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const {
-      product,
-      offer,
-      audience,
-      objective,
-      platform,
-      budget,
-      timeframe,
-      region,
-      context,
-    } = body || {}
 
-    if (!product || !offer || !audience || !objective) {
-      return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 })
+    // Validação com Zod
+    const validation = validateInput(generateAdsSchema, body)
+    if (!validation.success) {
+      secureLogger.warn('Validação falhou em generate-ads', {
+        userId: user.userId,
+        error: validation.error
+      })
+      return NextResponse.json({
+        success: false,
+        error: validation.error
+      }, { status: 400 })
     }
+
+    const { product, audience, platform, objective, budget, context } = validation.data
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ success: false, error: "Missing API key" }, { status: 500 })
+      secureLogger.error('GEMINI_API_KEY não configurada')
+      return NextResponse.json({ success: false, error: "Serviço temporariamente indisponível" }, { status: 500 })
     }
 
-    const safe = sanitize({
+    const prompt = buildPrompt({
       product,
-      offer,
       audience,
+      platform,
       objective,
-      platform: platform || "Auto",
-      budget: budget ?? "",
-      timeframe: timeframe ?? "",
-      region: region || "",
-      context: context || "",
+      budget: budget || 0,
+      context: context || ""
     })
-
-    const prompt = buildPrompt(safe)
 
     const payload = {
       contents: [
@@ -173,7 +206,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Failed to parse provider JSON" }, { status: 502 })
     }
 
-    // Remove formatação markdown do objeto
     const cleanedStrategy = cleanMarkdownFromObject(parsed)
 
     await trackGeneration({
@@ -181,63 +213,26 @@ export async function POST(request: NextRequest) {
       type: 'ads',
       metadata: {
         product,
-        offer,
         audience,
         objective,
         platform,
-        budget,
-        timeframe
+        budget
       }
     })
 
     return NextResponse.json({ success: true, strategy: cleanedStrategy })
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Unexpected error" }, { status: 500 })
-  }
-}
-
-function sanitize(input: {
-  product: string
-  offer: string
-  audience: string
-  objective: string
-  platform: string
-  budget: string | number
-  timeframe: string | number
-  region: string
-  context: string
-}) {
-  const norm = (s: string) =>
-    String(s || "")
-      .slice(0, 700)
-      .replace(/[\u0000-\u001F\u007F]/g, " ")
-      .replace(/[<>`{}\[\]]/g, " ")
-      .replace(/(?:ignore|disregard)\s+all\s+previous[^\n]*/gi, " ")
-      .replace(/reveal|show\s+(?:the\s+)?(?:system|developer)\s+(?:prompt|message)/gi, " ")
-      .replace(/jailbreak|ignore\s+instructions|do\s+anything\s+now/gi, " ")
-      .trim()
-  return {
-    product: norm(input.product),
-    offer: norm(input.offer),
-    audience: norm(input.audience),
-    objective: norm(input.objective),
-    platform: norm(input.platform),
-    budget: norm(String(input.budget)),
-    timeframe: norm(String(input.timeframe)),
-    region: norm(input.region),
-    context: norm(input.context),
+    secureLogger.error('Erro em generate-ads', error)
+    return NextResponse.json({ success: false, error: "Erro ao processar solicitação" }, { status: 500 })
   }
 }
 
 function buildPrompt(s: {
   product: string
-  offer: string
   audience: string
-  objective: string
   platform: string
-  budget: string
-  timeframe: string
-  region: string
+  objective: string
+  budget: number
   context: string
 }) {
   const schema = `{
@@ -267,7 +262,7 @@ function buildPrompt(s: {
   }`
 
   const base = `Você é um media buyer sênior em pt-BR. Gere uma estratégia de tráfego pago orientada a resultados para ${s.platform}.
-Produto/serviço: ${s.product}. Oferta: ${s.offer}. Público: ${s.audience}. Objetivo: ${s.objective}. Orçamento mensal em BRL: ${s.budget || "indefinido"}. Janela (dias): ${s.timeframe || "indefinida"}. Região/idioma: ${s.region || "BR"}. Contexto: ${s.context}.
+Produto/serviço: ${s.product}. Público: ${s.audience}. Objetivo: ${s.objective}. Orçamento mensal em BRL: ${s.budget || "indefinido"}. Contexto: ${s.context}.
 
 Responda estritamente com JSON válido no schema abaixo. Use chaves duplas em todas as propriedades e strings. Não inclua comentários, blocos de código ou texto fora do JSON. Crie no mínimo 3 criativos por campanha com "headline", "description" e "cta". Schema: ${schema}`
 
@@ -326,5 +321,3 @@ function extractJsonObject(source: string): any | null {
   } catch {}
   return null
 }
-
-

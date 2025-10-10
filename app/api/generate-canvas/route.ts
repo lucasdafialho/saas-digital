@@ -3,16 +3,54 @@ import { getUserFromRequest } from "@/lib/auth-api"
 import { checkGenerationLimit } from "@/lib/generation-limits"
 import { trackGeneration } from "@/lib/generations"
 import { cleanMarkdownFromObject } from "@/lib/text-formatter"
+import { rateLimitByUserId, RATE_LIMITS } from "@/lib/rate-limit-redis"
+import { generateCanvasSchema, validateInput } from "@/lib/validators"
+import { sanitizeAIContent } from "@/lib/content-sanitizer"
+import secureLogger from "@/lib/logger"
+import { logSecurityEvent } from "@/lib/audit"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+
   try {
     const user = await getUserFromRequest(request)
-    
+
     if (!user) {
+      await logSecurityEvent({
+        type: 'unauthorized_access',
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-canvas' },
+        severity: 'medium'
+      })
       return NextResponse.json({ success: false, error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    // Rate limiting
+    const rateLimitCheck = await rateLimitByUserId({
+      ...RATE_LIMITS.api.generation,
+      userId: user.userId,
+      keyPrefix: 'generate-canvas'
+    })
+
+    if (!rateLimitCheck.allowed) {
+      await logSecurityEvent({
+        type: 'rate_limit_exceeded',
+        userId: user.userId,
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-canvas' },
+        severity: 'low'
+      })
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.message,
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 })
     }
 
     const limitCheck = await checkGenerationLimit(user.userId, 'canvas')
@@ -21,27 +59,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { product, audience, offer, objective, market, context } = body || {}
 
-    if (!product || !audience || !offer || !objective) {
-      return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 })
+    // Validação com Zod
+    const validation = validateInput(generateCanvasSchema, body)
+    if (!validation.success) {
+      secureLogger.warn('Validação falhou em generate-canvas', {
+        userId: user.userId,
+        error: validation.error
+      })
+      return NextResponse.json({
+        success: false,
+        error: validation.error
+      }, { status: 400 })
     }
+
+    const { product, audience, value_proposition, context } = validation.data
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ success: false, error: "Missing API key" }, { status: 500 })
+      secureLogger.error('GEMINI_API_KEY não configurada')
+      return NextResponse.json({ success: false, error: "Serviço temporariamente indisponível" }, { status: 500 })
     }
 
-    const safe = sanitize({
+    const prompt = buildPrompt({
       product,
       audience,
-      offer,
-      objective,
-      market: market || "",
-      context: context || "",
+      value_proposition: value_proposition || "",
+      context: context || ""
     })
-
-    const prompt = buildPrompt(safe)
 
     const payload = {
       contents: [
@@ -120,7 +165,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Failed to parse provider JSON" }, { status: 502 })
     }
 
-    // Remove formatação markdown do objeto
+    // Remove formatação markdown e sanitiza
     const cleanedCanvas = cleanMarkdownFromObject(parsed)
 
     await trackGeneration({
@@ -129,51 +174,21 @@ export async function POST(request: NextRequest) {
       metadata: {
         product,
         audience,
-        offer,
-        objective,
-        market
+        value_proposition
       }
     })
 
     return NextResponse.json({ success: true, canvas: cleanedCanvas })
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Unexpected error" }, { status: 500 })
-  }
-}
-
-function sanitize(input: {
-  product: string
-  audience: string
-  offer: string
-  objective: string
-  market: string
-  context: string
-}) {
-  const norm = (s: string) =>
-    String(s || "")
-      .slice(0, 700)
-      .replace(/[\u0000-\u001F\u007F]/g, " ")
-      .replace(/[<>`{}\[\]]/g, " ")
-      .replace(/(?:ignore|disregard)\s+all\s+previous[^\n]*/gi, " ")
-      .replace(/reveal|show\s+(?:the\s+)?(?:system|developer)\s+(?:prompt|message)/gi, " ")
-      .replace(/jailbreak|ignore\s+instructions|do\s+anything\s+now/gi, " ")
-      .trim()
-  return {
-    product: norm(input.product),
-    audience: norm(input.audience),
-    offer: norm(input.offer),
-    objective: norm(input.objective),
-    market: norm(input.market),
-    context: norm(input.context),
+    secureLogger.error('Erro em generate-canvas', error)
+    return NextResponse.json({ success: false, error: "Erro ao processar solicitação" }, { status: 500 })
   }
 }
 
 function buildPrompt(s: {
   product: string
   audience: string
-  offer: string
-  objective: string
-  market: string
+  value_proposition: string
   context: string
 }) {
   const schema = `{
@@ -188,7 +203,7 @@ function buildPrompt(s: {
     "costStructure": string[]
   }`
 
-  const base = `Você é um estrategista de marketing em pt-BR. Gere um Marketing Model Canvas completo e prático baseado nos dados fornecidos. Público: ${s.audience}. Produto/serviço: ${s.product}. Oferta: ${s.offer}. Objetivo: ${s.objective}. Mercado/nicho: ${s.market || "indefinido"}. Contexto adicional: ${s.context}.
+  const base = `Você é um estrategista de marketing em pt-BR. Gere um Marketing Model Canvas completo e prático baseado nos dados fornecidos. Público: ${s.audience}. Produto/serviço: ${s.product}. Proposta de valor: ${s.value_proposition || "indefinida"}. Contexto adicional: ${s.context}.
 
 Responda estritamente com JSON válido e nada mais, conforme o schema abaixo. Use bullets curtos, claros e acionáveis para cada bloco. Inclua somente os 9 blocos do Canvas (sem campos extras). Schema: ${schema}`
 
@@ -224,5 +239,3 @@ function extractJsonObject(source: string): any | null {
   } catch {}
   return null
 }
-
-

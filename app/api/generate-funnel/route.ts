@@ -3,16 +3,53 @@ import { getUserFromRequest } from "@/lib/auth-api"
 import { checkGenerationLimit } from "@/lib/generation-limits"
 import { trackGeneration } from "@/lib/generations"
 import { cleanMarkdownFromObject } from "@/lib/text-formatter"
+import { rateLimitByUserId, RATE_LIMITS } from "@/lib/rate-limit-redis"
+import { generateFunnelSchema, validateInput } from "@/lib/validators"
+import secureLogger from "@/lib/logger"
+import { logSecurityEvent } from "@/lib/audit"
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite"
 const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 
 export async function POST(request: NextRequest) {
+  const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
+  const userAgent = request.headers.get('user-agent') || 'unknown'
+
   try {
     const user = await getUserFromRequest(request)
-    
+
     if (!user) {
+      await logSecurityEvent({
+        type: 'unauthorized_access',
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-funnel' },
+        severity: 'medium'
+      })
       return NextResponse.json({ success: false, error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    // Rate limiting
+    const rateLimitCheck = await rateLimitByUserId({
+      ...RATE_LIMITS.api.generation,
+      userId: user.userId,
+      keyPrefix: 'generate-funnel'
+    })
+
+    if (!rateLimitCheck.allowed) {
+      await logSecurityEvent({
+        type: 'rate_limit_exceeded',
+        userId: user.userId,
+        ip,
+        userAgent,
+        details: { endpoint: '/api/generate-funnel' },
+        severity: 'low'
+      })
+      return NextResponse.json({
+        success: false,
+        error: rateLimitCheck.message,
+        retryAfter: rateLimitCheck.retryAfter
+      }, { status: 429 })
     }
 
     const limitCheck = await checkGenerationLimit(user.userId, 'funnel')
@@ -21,38 +58,35 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const {
-      product,
-      audience,
-      offer,
-      objective,
-      funnelType,
-      budget,
-      timeframe,
-      context,
-    } = body || {}
 
-    if (!product || !audience || !offer || !objective) {
-      return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 })
+    // Validação com Zod
+    const validation = validateInput(generateFunnelSchema, body)
+    if (!validation.success) {
+      secureLogger.warn('Validação falhou em generate-funnel', {
+        userId: user.userId,
+        error: validation.error
+      })
+      return NextResponse.json({
+        success: false,
+        error: validation.error
+      }, { status: 400 })
     }
+
+    const { product, audience, goal, budget, context } = validation.data
 
     const apiKey = process.env.GEMINI_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ success: false, error: "Missing API key" }, { status: 500 })
+      secureLogger.error('GEMINI_API_KEY não configurada')
+      return NextResponse.json({ success: false, error: "Serviço temporariamente indisponível" }, { status: 500 })
     }
 
-    const safe = sanitize({
+    const prompt = buildPrompt({
       product,
       audience,
-      offer,
-      objective,
-      funnelType: funnelType || "",
-      budget: budget || "",
-      timeframe: timeframe || "",
-      context: context || "",
+      goal,
+      budget: budget || 0,
+      context: context || ""
     })
-
-    const prompt = buildPrompt(safe)
 
     const payload = {
       contents: [
@@ -163,7 +197,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Failed to parse provider JSON" }, { status: 502 })
     }
 
-    // Remove formatação markdown do objeto
     const cleanedStrategy = cleanMarkdownFromObject(parsed)
 
     await trackGeneration({
@@ -172,59 +205,23 @@ export async function POST(request: NextRequest) {
       metadata: {
         product,
         audience,
-        offer,
-        objective,
-        funnelType,
-        budget,
-        timeframe
+        goal,
+        budget
       }
     })
 
     return NextResponse.json({ success: true, strategy: cleanedStrategy })
   } catch (error) {
-    return NextResponse.json({ success: false, error: "Unexpected error" }, { status: 500 })
-  }
-}
-
-function sanitize(input: {
-  product: string
-  audience: string
-  offer: string
-  objective: string
-  funnelType: string
-  budget: string
-  timeframe: string
-  context: string
-}) {
-  const norm = (s: string) =>
-    String(s || "")
-      .slice(0, 700)
-      .replace(/[\u0000-\u001F\u007F]/g, " ")
-      .replace(/[<>`{}\[\]]/g, " ")
-      .replace(/(?:ignore|disregard)\s+all\s+previous[^\n]*/gi, " ")
-      .replace(/reveal|show\s+(?:the\s+)?(?:system|developer)\s+(?:prompt|message)/gi, " ")
-      .replace(/jailbreak|ignore\s+instructions|do\s+anything\s+now/gi, " ")
-      .trim()
-  return {
-    product: norm(input.product),
-    audience: norm(input.audience),
-    offer: norm(input.offer),
-    objective: norm(input.objective),
-    funnelType: norm(input.funnelType),
-    budget: norm(input.budget),
-    timeframe: norm(input.timeframe),
-    context: norm(input.context),
+    secureLogger.error('Erro em generate-funnel', error)
+    return NextResponse.json({ success: false, error: "Erro ao processar solicitação" }, { status: 500 })
   }
 }
 
 function buildPrompt(s: {
   product: string
   audience: string
-  offer: string
-  objective: string
-  funnelType: string
-  budget: string
-  timeframe: string
+  goal: string
+  budget: number
   context: string
 }) {
   const schema = `{
@@ -248,7 +245,7 @@ function buildPrompt(s: {
     "timeline": [{ "phase": string, "week": string, "focus": string }]
   }`
 
-  const base = `Você é um estrategista de growth e funis de vendas em pt-BR. Gere um plano completo de funil baseado nos dados fornecidos. Público: ${s.audience}. Produto/serviço: ${s.product}. Oferta: ${s.offer}. Objetivo: ${s.objective}. Tipo de funil preferido: ${s.funnelType || "indefinido"}. Orçamento (BRL): ${s.budget || "indefinido"}. Janela (dias): ${s.timeframe || "indefinida"}. Contexto adicional: ${s.context}.
+  const base = `Você é um estrategista de growth e funis de vendas em pt-BR. Gere um plano completo de funil baseado nos dados fornecidos. Público: ${s.audience}. Produto/serviço: ${s.product}. Objetivo: ${s.goal}. Orçamento (BRL): ${s.budget || "indefinido"}. Contexto adicional: ${s.context}.
 
 Responda estritamente com JSON válido e nada mais, conforme o schema abaixo. Não use blocos de código ou comentários. Para cada etapa, inclua canais, ações objetivas, recomendações e KPIs. Schema: ${schema}`
 
@@ -275,16 +272,12 @@ function extractText(json: any): string {
 
 function extractJsonObject(source: string): any | null {
   const cleaned = String(source || "").replace(/```[\s\S]*?```/g, (m) => m.replace(/```[a-zA-Z]*\n?|```/g, "")).trim()
-  // Model compliant path: often returns JSON already
   try {
     return JSON.parse(cleaned)
   } catch {}
-  // Some models wrap with leading text; try to locate the first JSON object
   try {
     const objMatch = cleaned.match(/\{[\s\S]*\}$/)
     if (objMatch) return JSON.parse(objMatch[0])
   } catch {}
   return null
 }
-
-

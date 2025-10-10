@@ -101,7 +101,7 @@ export function sanitizeObject<T extends Record<string, any>>(
       } else if (typeof value === 'boolean') {
         sanitized[key] = value as T[typeof key]
       } else if (Array.isArray(value)) {
-        sanitized[key] = value.map(item => 
+        sanitized[key] = value.map((item: any) =>
           typeof item === 'string' ? sanitizeInput(item, schema[key]) : item
         ) as T[typeof key]
       } else {

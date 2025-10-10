@@ -1,4 +1,5 @@
 import crypto from "crypto"
+import secureLogger from './logger'
 
 export interface MercadoPagoPreapprovalPlan {
   id?: string
@@ -81,16 +82,22 @@ export class MercadoPagoService {
   }
 
   validateWebhookSignature(headers: any, body: any): boolean {
+    // CRÍTICO: Webhook secret é obrigatório
     if (!this.webhookSecret) {
-      console.error("🔴 SEGURANÇA: MERCADOPAGO_WEBHOOK_SECRET não configurado - RECUSANDO webhook")
-      return false
+      secureLogger.security('WEBHOOK_SECRET não configurado - webhook rejeitado', {
+        source: 'mercadopago'
+      })
+      throw new Error("WEBHOOK_SECRET não configurado - webhook rejeitado por segurança")
     }
 
     const xSignature = headers['x-signature']
     const xRequestId = headers['x-request-id']
 
     if (!xSignature || !xRequestId) {
-      console.error("🔴 SEGURANÇA: Headers de assinatura ausentes")
+      secureLogger.security('Headers de assinatura ausentes', {
+        hasSignature: !!xSignature,
+        hasRequestId: !!xRequestId
+      })
       return false
     }
 
@@ -99,18 +106,40 @@ export class MercadoPagoService {
     const v1 = parts.find((part: string) => part.startsWith('v1='))?.replace('v1=', '')
 
     if (!ts || !v1) {
-      console.error("🔴 SEGURANÇA: Formato de assinatura inválido")
+      secureLogger.security('Formato de assinatura inválido', {
+        hasTimestamp: !!ts,
+        hasV1: !!v1
+      })
       return false
     }
 
+    // VALIDAÇÃO DE TIMESTAMP (Prevenir replay attacks)
+    const timestamp = parseInt(ts)
+    const now = Math.floor(Date.now() / 1000)
+    const maxAge = 300 // 5 minutos
+
+    if (Math.abs(now - timestamp) > maxAge) {
+      secureLogger.security('Webhook com timestamp inválido - possível replay attack', {
+        timestamp,
+        now,
+        difference: Math.abs(now - timestamp)
+      })
+      return false
+    }
+
+    // Validar assinatura HMAC
     const manifest = `id:${body.data?.id || ''};request-id:${xRequestId};ts:${ts};`
     const hmac = crypto.createHmac('sha256', this.webhookSecret)
     hmac.update(manifest)
     const signature = hmac.digest('hex')
 
     const isValid = signature === v1
+
     if (!isValid) {
-      console.error("🔴 SEGURANÇA: Assinatura de webhook inválida")
+      secureLogger.security('Assinatura de webhook inválida', {
+        expected: signature.substring(0, 10) + '...',
+        received: v1.substring(0, 10) + '...'
+      })
     }
 
     return isValid
