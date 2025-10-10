@@ -78,3 +78,33 @@ export async function getCSRFToken(): Promise<string> {
   const data: CSRFResponse = await response.json()
   return data.csrfToken
 }
+
+/**
+ * Helper para fazer requisições com CSRF automaticamente
+ *
+ * @example
+ * const response = await fetchWithCSRF('/api/user/change-password', {
+ *   method: 'POST',
+ *   body: JSON.stringify({ currentPassword, newPassword })
+ * })
+ */
+export async function fetchWithCSRF(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  // Obter token CSRF
+  const csrfToken = await getCSRFToken()
+
+  // Adicionar token aos headers
+  const headers = new Headers(options.headers)
+  headers.set('X-CSRF-Token', csrfToken)
+  
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
+  return fetch(url, {
+    ...options,
+    headers
+  })
+}

@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { supabaseAdmin } from '@/lib/supabase-client'
+import { validateRequest } from '@/lib/api-security'
+import { RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function DELETE(request: NextRequest) {
+  // Validar CSRF + Rate Limiting
+  const validationError = await validateRequest(request, {
+    requireCsrf: true,
+    rateLimit: {
+      ...RATE_LIMITS.api.profile,
+      keyPrefix: 'delete-account'
+    }
+  })
+  
+  if (validationError) {
+    return validationError
+  }
+
   try {
     const supabase = await createClient()
     

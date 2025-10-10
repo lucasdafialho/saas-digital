@@ -1,34 +1,26 @@
-import winston from 'winston'
+// Logger simplificado para funcionar no Vercel (sem winston)
+// Winston usa 'fs' que não funciona no Edge Runtime
 
-// Configuração do logger seguro
-const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  defaultMeta: { service: 'saas-digital' },
-  transports: [
-    // Logs de erro em arquivo (em produção)
-    ...(process.env.NODE_ENV === 'production' ? [
-      new winston.transports.File({
-        filename: 'error.log',
-        level: 'error',
-        maxsize: 5242880, // 5MB
-        maxFiles: 5
-      })
-    ] : []),
+const logger = {
+  log: (level: string, message: string, meta?: any) => {
+    const timestamp = new Date().toISOString()
+    const logData = {
+      timestamp,
+      level,
+      service: 'saas-digital',
+      message,
+      ...meta
+    }
 
-    // Console para desenvolvimento
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    })
-  ]
-})
+    if (process.env.NODE_ENV === 'production') {
+      // Em produção, usar console.log estruturado (Vercel captura)
+      console.log(JSON.stringify(logData))
+    } else {
+      // Em desenvolvimento, log mais legível
+      console.log(`[${timestamp}] ${level.toUpperCase()}: ${message}`, meta || '')
+    }
+  }
+}
 
 // Função para redação de dados sensíveis
 function redactSensitiveData(data: any): any {
@@ -74,11 +66,11 @@ function redactSensitiveData(data: any): any {
 // Wrapper seguro para logs
 export const secureLogger = {
   info: (message: string, meta?: any) => {
-    logger.info(message, meta ? redactSensitiveData(meta) : undefined)
+    logger.log('info', message, meta ? redactSensitiveData(meta) : undefined)
   },
 
   warn: (message: string, meta?: any) => {
-    logger.warn(message, meta ? redactSensitiveData(meta) : undefined)
+    logger.log('warn', message, meta ? redactSensitiveData(meta) : undefined)
   },
 
   error: (message: string, error?: any) => {
@@ -88,18 +80,18 @@ export const secureLogger = {
       name: error.name
     } : error
 
-    logger.error(message, errorData ? redactSensitiveData(errorData) : undefined)
+    logger.log('error', message, errorData ? redactSensitiveData(errorData) : undefined)
   },
 
   debug: (message: string, meta?: any) => {
     if (process.env.NODE_ENV !== 'production') {
-      logger.debug(message, meta ? redactSensitiveData(meta) : undefined)
+      logger.log('debug', message, meta ? redactSensitiveData(meta) : undefined)
     }
   },
 
   // Log específico para segurança
   security: (event: string, details?: any) => {
-    logger.warn(`[SECURITY] ${event}`, details ? redactSensitiveData(details) : undefined)
+    logger.log('security', `[SECURITY] ${event}`, details ? redactSensitiveData(details) : undefined)
   }
 }
 

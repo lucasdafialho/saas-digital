@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { getUserActiveSubscription } from '@/lib/subscriptions'
+import { validateRequest } from '@/lib/api-security'
+import { RATE_LIMITS } from '@/lib/rate-limit'
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,6 +51,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
+  // Validar CSRF + Rate Limiting
+  const validationError = await validateRequest(request, {
+    requireCsrf: true,
+    rateLimit: {
+      ...RATE_LIMITS.api.profile,
+      keyPrefix: 'update-settings'
+    }
+  })
+  
+  if (validationError) {
+    return validationError
+  }
+
   try {
     const supabase = await createClient()
     

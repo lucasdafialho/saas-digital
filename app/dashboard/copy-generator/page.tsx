@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useCSRF } from "@/hooks/use-csrf"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -88,6 +89,7 @@ const templates = {
 
 export default function CopyGeneratorPage() {
   const { user } = useAuth()
+  const { token: csrfToken } = useCSRF()
   const [selectedType, setSelectedType] = useState("headline")
   const [formData, setFormData] = useState({
     product: "",
@@ -108,10 +110,18 @@ export default function CopyGeneratorPage() {
 
     setIsGenerating(true)
 
+    if (!csrfToken) {
+      console.error('Token CSRF não disponível')
+      return
+    }
+
     try {
       const res = await fetch("/api/generate-copy", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
         body: JSON.stringify({
           type: selectedType,
           product: formData.product,

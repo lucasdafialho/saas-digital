@@ -3,7 +3,8 @@ import { getUserFromRequest } from "@/lib/auth-api"
 import { checkGenerationLimit } from "@/lib/generation-limits"
 import { trackGeneration } from "@/lib/generations"
 import { cleanMarkdownFromObject } from "@/lib/text-formatter"
-import { rateLimitByUserId, RATE_LIMITS } from "@/lib/rate-limit-redis"
+import { validateRequest } from "@/lib/api-security"
+import { RATE_LIMITS } from "@/lib/rate-limit-redis"
 import { generateFunnelSchema, validateInput } from "@/lib/validators"
 import secureLogger from "@/lib/logger"
 import { logSecurityEvent } from "@/lib/audit"
@@ -14,6 +15,19 @@ const FALLBACK_MODEL = "gemini-2.0-flash-lite"
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
   const userAgent = request.headers.get('user-agent') || 'unknown'
+
+  // Validar CSRF + Rate Limiting
+  const validationError = await validateRequest(request, {
+    requireCsrf: true,
+    rateLimit: {
+      ...RATE_LIMITS.api.generation,
+      keyPrefix: 'generate-funnel'
+    }
+  })
+  
+  if (validationError) {
+    return validationError
+  }
 
   try {
     const user = await getUserFromRequest(request)
@@ -27,29 +41,6 @@ export async function POST(request: NextRequest) {
         severity: 'medium'
       })
       return NextResponse.json({ success: false, error: "Usuário não autenticado" }, { status: 401 })
-    }
-
-    // Rate limiting
-    const rateLimitCheck = await rateLimitByUserId({
-      ...RATE_LIMITS.api.generation,
-      userId: user.userId,
-      keyPrefix: 'generate-funnel'
-    })
-
-    if (!rateLimitCheck.allowed) {
-      await logSecurityEvent({
-        type: 'rate_limit_exceeded',
-        userId: user.userId,
-        ip,
-        userAgent,
-        details: { endpoint: '/api/generate-funnel' },
-        severity: 'low'
-      })
-      return NextResponse.json({
-        success: false,
-        error: rateLimitCheck.message,
-        retryAfter: rateLimitCheck.retryAfter
-      }, { status: 429 })
     }
 
     const limitCheck = await checkGenerationLimit(user.userId, 'funnel')

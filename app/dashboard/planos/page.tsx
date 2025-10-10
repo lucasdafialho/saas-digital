@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
+import { useCSRF } from "@/hooks/use-csrf"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -31,6 +32,7 @@ function SearchParamsEffect({ onPaymentApproved, onSubscriptionSuccess }: { onPa
 
 export default function PlanosPage() {
   const { user, isLoading: authLoading } = useAuth()
+  const { token: csrfToken } = useCSRF()
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [isNewUser, setIsNewUser] = useState(false)
@@ -73,6 +75,11 @@ export default function PlanosPage() {
       return
     }
 
+    if (!csrfToken) {
+      alert("Token de segurança não disponível. Recarregue a página.")
+      return
+    }
+
     setLoading(planType)
 
     try {
@@ -82,7 +89,10 @@ export default function PlanosPage() {
 
       const response = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
         body: JSON.stringify({
           planType,
           userEmail: user.email,

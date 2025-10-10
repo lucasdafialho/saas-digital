@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { validateRequest } from '@/lib/api-security'
+import { RATE_LIMITS } from '@/lib/rate-limit'
 import { sanitizeEmail } from '@/lib/sanitize'
 
-const loginRateLimit = rateLimit({
-  ...RATE_LIMITS.auth.login,
-  keyPrefix: 'login',
-  message: 'Muitas tentativas de login. Tente novamente mais tarde.'
-})
-
 export async function POST(request: NextRequest) {
-  const rateLimitResult = await loginRateLimit(request)
-  if (rateLimitResult) {
-    return rateLimitResult
+  // Validar CSRF + Rate Limiting
+  const validationError = await validateRequest(request, {
+    requireCsrf: true,
+    rateLimit: {
+      ...RATE_LIMITS.auth.login,
+      keyPrefix: 'login',
+      message: 'Muitas tentativas de login. Tente novamente mais tarde.'
+    }
+  })
+  
+  if (validationError) {
+    return validationError
   }
 
   try {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { useCSRF } from "@/hooks/use-csrf"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -23,6 +24,7 @@ type Canvas = {
 }
 
 export default function CanvasPage() {
+  const { token: csrfToken } = useCSRF()
   const resultsRef = useRef<HTMLDivElement | null>(null)
   const [form, setForm] = useState({
     product: "",
@@ -41,6 +43,10 @@ export default function CanvasPage() {
 
   const handleGenerate = async () => {
     if (!form.product || !form.audience || !form.offer || !form.objective) return
+    if (!csrfToken) {
+      console.error('Token CSRF não disponível')
+      return
+    }
     setIsGenerating(true)
     setStatus("generating")
     setErrorMsg("")
@@ -48,7 +54,10 @@ export default function CanvasPage() {
     try {
       const res = await fetch("/api/generate-canvas", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
         body: JSON.stringify(form),
       })
       const text = await res.text()

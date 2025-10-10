@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { User, Shield, CreditCard, Key, Trash2, Save, Loader2, Eye, EyeOff } from "lucide-react"
 import { useState, useEffect } from "react"
+import { useCSRF } from "@/hooks/use-csrf"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 
 interface SettingsData {
@@ -31,6 +32,7 @@ interface SettingsData {
 type TabType = 'perfil' | 'seguranca' | 'plano'
 
 export default function ConfiguracoesPage() {
+  const { token: csrfToken } = useCSRF()
   const [activeTab, setActiveTab] = useState<TabType>('perfil')
   const [settings, setSettings] = useState<SettingsData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -76,11 +78,20 @@ export default function ConfiguracoesPage() {
   }
 
   async function handleSave() {
+    if (!csrfToken) {
+      setMessage({ type: 'error', text: 'Token de segurança não disponível' })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
     setSaving(true)
     try {
       const response = await fetch('/api/user/settings', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
         body: JSON.stringify(formData)
       })
 
@@ -102,9 +113,19 @@ export default function ConfiguracoesPage() {
       return
     }
 
+    if (!csrfToken) {
+      setMessage({ type: 'error', text: 'Token de segurança não disponível' })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
     try {
       const response = await fetch('/api/user/cancel-subscription', {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        }
       })
 
       if (!response.ok) throw new Error('Erro ao cancelar')
@@ -143,10 +164,20 @@ export default function ConfiguracoesPage() {
       return
     }
 
+    if (!csrfToken) {
+      setMessage({ type: 'error', text: 'Token de segurança não disponível' })
+      setChangingPassword(false)
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
     try {
       const response = await fetch('/api/user/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword
@@ -181,9 +212,19 @@ export default function ConfiguracoesPage() {
       return
     }
 
+    if (!csrfToken) {
+      setMessage({ type: 'error', text: 'Token de segurança não disponível' })
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
     try {
       const response = await fetch('/api/user/delete-account', {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        }
       })
 
       if (!response.ok) throw new Error('Erro ao excluir conta')

@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit'
+import { validateRequest } from '@/lib/api-security'
+import { RATE_LIMITS } from '@/lib/rate-limit'
 import { validateAndSanitizePassword } from '@/lib/sanitize'
 
-const changePasswordRateLimit = rateLimit({
-  ...RATE_LIMITS.auth.changePassword,
-  keyPrefix: 'change-password',
-  message: 'Muitas tentativas de alteração de senha. Tente novamente mais tarde.'
-})
-
 export async function POST(request: NextRequest) {
-  const rateLimitResult = await changePasswordRateLimit(request)
-  if (rateLimitResult) {
-    return rateLimitResult
+  // Validar CSRF + Rate Limiting
+  const validationError = await validateRequest(request, {
+    requireCsrf: true,
+    rateLimit: {
+      ...RATE_LIMITS.auth.changePassword,
+      keyPrefix: 'change-password',
+      message: 'Muitas tentativas de alteração de senha. Tente novamente mais tarde.'
+    }
+  })
+  
+  if (validationError) {
+    return validationError
   }
 
   try {
