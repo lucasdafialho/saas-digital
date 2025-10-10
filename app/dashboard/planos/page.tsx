@@ -162,21 +162,22 @@ export default function PlanosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20" data-animate>
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/10" data-animate>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <Suspense>
           <SearchParamsEffect onPaymentApproved={handlePaymentApproved} onSubscriptionSuccess={handleSubscriptionSuccess} />
         </Suspense>
+
         {isNewUser && (
-          <Card className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-0 shadow-xl" data-animate>
-            <CardHeader className="py-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur">
-                  <Sparkles className="w-6 h-6 animate-pulse" />
+          <Card className="mb-8 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground border-0 shadow-2xl" data-animate>
+            <CardHeader className="py-6">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Sparkles className="w-7 h-7 animate-pulse" />
                 </div>
                 <div>
                   <CardTitle className="text-2xl font-bold">Pagamento confirmado! 🎉</CardTitle>
-                  <CardDescription className="text-primary-foreground/90 mt-1">
+                  <CardDescription className="text-primary-foreground/90 mt-1.5">
                     Redirecionando para o dashboard...
                   </CardDescription>
                 </div>
@@ -185,21 +186,23 @@ export default function PlanosPage() {
           </Card>
         )}
 
-        <div className="text-center space-y-4">
-          <Badge className="px-3 py-1.5 text-xs" variant="secondary">
-            <TrendingUp className="w-3 h-3 mr-1.5" />
-            Planos mensais flexíveis
-          </Badge>
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+        <div className="text-center space-y-4 mb-10">
+          <div className="inline-flex items-center justify-center">
+            <Badge className="px-4 py-2 text-sm font-medium" variant="secondary">
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Planos mensais flexíveis
+            </Badge>
+          </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight leading-tight">
             Escolha seu Plano
           </h1>
-          <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-            Transforme seu marketing digital com o poder da inteligência artificial.
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Transforme seu marketing digital com o poder da inteligência artificial.<br/>
             Cancele quando quiser, sem compromisso.
           </p>
         </div>
 
-      <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto px-4">
         {plans.map((plan) => {
           const Icon = plan.icon
           const isCurrentPlan = user?.plan === plan.id
@@ -208,70 +211,73 @@ export default function PlanosPage() {
           return (
             <Card
               key={plan.id}
-              className={`relative overflow-hidden transition-all duration-300 group flex flex-col ${
+              className={`relative overflow-hidden transition-all duration-300 hover:scale-[1.02] group flex flex-col ${
                 plan.popular
-                  ? "border-2 border-primary shadow-xl hover:shadow-2xl bg-gradient-to-br from-background to-primary/5"
-                  : "border hover:shadow-xl hover:border-primary/50"
+                  ? "border-2 border-primary shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(139,92,246,0.25)] bg-gradient-to-br from-background via-background to-primary/5"
+                  : "border-2 border-border/50 hover:border-primary/50 shadow-lg hover:shadow-xl"
               }`}
               data-animate
             >
               {plan.popular && (
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary/80 to-primary"></div>
-              )}
-              {plan.popular && (
-                <div className="absolute top-3 right-3">
-                  <Badge className="bg-gradient-to-r from-primary to-primary/80 border-0 shadow-md px-2.5 py-0.5 text-xs">
-                    <Crown className="w-3 h-3 mr-1" />
-                    Mais Popular
-                  </Badge>
-                </div>
+                <>
+                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-primary/80 to-primary"></div>
+                  <div className="absolute top-5 right-5 z-10">
+                    <Badge className="bg-gradient-to-r from-primary to-primary/80 border-0 shadow-lg px-3 py-1.5 text-xs font-bold">
+                      <Crown className="w-3.5 h-3.5 mr-1.5" />
+                      Mais Popular
+                    </Badge>
+                  </div>
+                </>
               )}
 
-              <CardHeader className="text-center pb-4 pt-8 min-h-[280px] flex flex-col justify-between">
-                <div>
-                  <div className={`w-16 h-16 ${plan.color} rounded-xl flex items-center justify-center mx-auto mb-4 shadow-md group-hover:scale-105 transition-transform duration-300`}>
-                    <Icon className={`w-8 h-8 ${plan.iconColor}`} />
+              <CardHeader className="text-center pb-4 pt-6 space-y-3">
+                <div className="space-y-3">
+                  <div className={`w-14 h-14 ${plan.color} rounded-2xl flex items-center justify-center mx-auto shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                    <Icon className={`w-7 h-7 ${plan.iconColor}`} />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-foreground mb-2">{plan.name}</CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">{plan.description}</CardDescription>
+                  <div className="space-y-1">
+                    <CardTitle className="text-2xl font-bold text-foreground">{plan.name}</CardTitle>
+                    <CardDescription className="text-sm leading-relaxed">{plan.description}</CardDescription>
+                  </div>
                 </div>
-                <div className="mt-4">
+
+                <div className="pt-1">
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-sm text-muted-foreground font-medium">R$</span>
-                    <span className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    <span className="text-sm text-muted-foreground font-semibold">R$</span>
+                    <span className="text-4xl font-extrabold bg-gradient-to-br from-foreground via-foreground to-foreground/70 bg-clip-text text-transparent">
                       {plan.price.toFixed(2).split('.')[0]}
                     </span>
                     <div className="flex flex-col items-start">
                       <span className="text-base font-bold text-foreground">,{plan.price.toFixed(2).split('.')[1]}</span>
-                      <span className="text-xs text-muted-foreground">/mês</span>
+                      <span className="text-xs text-muted-foreground font-medium">/mês</span>
                     </div>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6 flex flex-col flex-1">
-                <ul className="space-y-3 flex-grow">
+              <CardContent className="space-y-4 flex flex-col flex-1 px-5 pb-5">
+                <ul className="space-y-2 flex-grow">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3 group/item">
-                      <div className="w-5 h-5 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-                        <Check className="w-3 h-3 text-white font-bold" />
+                    <li key={index} className="flex items-start gap-2.5 group/item">
+                      <div className="w-4 h-4 bg-gradient-to-br from-primary via-primary to-primary/70 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md group-hover/item:scale-110 transition-transform">
+                        <Check className="w-2.5 h-2.5 text-white font-bold stroke-[3]" />
                       </div>
                       <span className="text-foreground text-sm leading-relaxed">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                <div className="pt-4 border-t border-border mt-auto">
+                <div className="pt-3 border-t border-border mt-auto">
                   {isCurrentPlan ? (
-                    <Badge className="w-full justify-center py-3 h-12 text-sm font-semibold" variant="secondary">
+                    <Badge className="w-full justify-center py-2.5 h-11 text-sm font-bold" variant="secondary">
                       <Check className="w-4 h-4 mr-2" />
                       Plano Atual
                     </Badge>
                   ) : plan.showButton ? (
                     <Button
-                      className={`w-full h-12 text-base font-bold shadow-lg ${
-                        plan.popular 
-                          ? "bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white" 
+                      className={`w-full h-12 text-base font-bold shadow-xl hover:shadow-2xl transition-all duration-300 ${
+                        plan.popular
+                          ? "bg-gradient-to-r from-primary via-primary to-primary/90 hover:from-primary/90 hover:via-primary hover:to-primary text-white"
                           : ""
                       }`}
                       variant={plan.buttonVariant}
@@ -280,7 +286,7 @@ export default function PlanosPage() {
                     >
                       {isLoading ? (
                         <>
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Processando...
                         </>
                       ) : (
@@ -298,21 +304,21 @@ export default function PlanosPage() {
         })}
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-6 mt-12" data-animate>
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 shadow-lg">
-          <CardHeader className="text-center pb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-md">
-              <Shield className="w-6 h-6 text-white" />
+      <div className="max-w-4xl mx-auto space-y-6 mt-10" data-animate>
+        <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 shadow-xl">
+          <CardHeader className="text-center pb-4 pt-8 space-y-3">
+            <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+              <Shield className="w-7 h-7 text-white" />
             </div>
-            <CardTitle className="text-xl text-foreground">
+            <CardTitle className="text-xl font-bold text-foreground">
               Métodos de Pagamento Aceitos
             </CardTitle>
-            <CardDescription className="text-sm mt-1">Escolha como preferir pagar - 100% Seguro via Mercado Pago</CardDescription>
+            <CardDescription className="text-sm">Escolha como preferir pagar - 100% Seguro via Mercado Pago</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="flex flex-col items-center p-4 bg-background rounded-lg border border-primary/50 hover:border-primary hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+          <CardContent className="px-6 pb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="flex flex-col items-center p-4 bg-background rounded-xl border-2 border-primary/30 hover:border-primary hover:shadow-lg transition-all group cursor-pointer">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -320,8 +326,8 @@ export default function PlanosPage() {
                 <span className="text-sm font-bold text-foreground text-center">PIX</span>
                 <p className="text-xs text-muted-foreground mt-1 text-center">Pagamento instantâneo</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-background rounded-lg border border-primary/50 hover:border-primary hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <div className="flex flex-col items-center p-4 bg-background rounded-xl border-2 border-primary/30 hover:border-primary hover:shadow-lg transition-all group cursor-pointer">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                   </svg>
@@ -329,8 +335,8 @@ export default function PlanosPage() {
                 <span className="text-sm font-bold text-foreground text-center">Cartão de Crédito</span>
                 <p className="text-xs text-muted-foreground mt-1 text-center">Até 12x sem juros</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-background rounded-lg border border-primary/50 hover:border-primary hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <div className="flex flex-col items-center p-4 bg-background rounded-xl border-2 border-primary/30 hover:border-primary hover:shadow-lg transition-all group cursor-pointer">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                   </svg>
@@ -338,8 +344,8 @@ export default function PlanosPage() {
                 <span className="text-sm font-bold text-foreground text-center">Cartão de Débito</span>
                 <p className="text-xs text-muted-foreground mt-1 text-center">Aprovação imediata</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-background rounded-lg border border-primary/50 hover:border-primary hover:shadow-md transition-all group">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <div className="flex flex-col items-center p-4 bg-background rounded-xl border-2 border-primary/30 hover:border-primary hover:shadow-lg transition-all group cursor-pointer">
+                <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -348,14 +354,14 @@ export default function PlanosPage() {
                 <p className="text-xs text-muted-foreground mt-1 text-center">Vence em 3 dias</p>
               </div>
             </div>
-            <div className="mt-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/30">
+            <div className="p-4 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl border border-primary/30">
               <p className="text-sm text-center leading-relaxed">
-                <span className="inline-flex items-center gap-1.5 text-primary font-bold">
+                <span className="inline-flex items-center gap-2 text-primary font-bold">
                   <Shield className="w-4 h-4" />
                   Pagamento 100% Seguro
                 </span>
                 <br />
-                <span className="text-muted-foreground text-xs">
+                <span className="text-muted-foreground text-xs mt-1 block">
                   Todos os pagamentos são processados pelo Mercado Pago com máxima segurança.
                 </span>
               </p>
@@ -363,45 +369,53 @@ export default function PlanosPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-accent to-background border shadow-lg">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl text-foreground">Perguntas Frequentes</CardTitle>
-            <CardDescription className="text-sm mt-1">Tire suas dúvidas sobre nossos planos</CardDescription>
+        <Card className="bg-gradient-to-br from-accent/50 to-background border-2 border-border shadow-xl">
+          <CardHeader className="text-center pb-4 pt-8 space-y-2">
+            <CardTitle className="text-xl font-bold text-foreground">Perguntas Frequentes</CardTitle>
+            <CardDescription className="text-sm">Tire suas dúvidas sobre nossos planos</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-background p-4 rounded-lg border-l-4 border-primary">
+          <CardContent className="space-y-4 px-6 pb-6">
+            <div className="bg-background p-4 rounded-xl border-l-4 border-primary shadow-sm hover:shadow-md transition-shadow">
               <h4 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
-                <Check className="w-4 h-4 text-primary" />
+                <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-primary" />
+                </div>
                 Posso cancelar a qualquer momento?
               </h4>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed ml-7">
                 Sim! Sem multas ou taxas de cancelamento. Seu plano permanece ativo até o fim do período pago.
               </p>
             </div>
-            <div className="bg-background p-4 rounded-lg border-l-4 border-primary">
+            <div className="bg-background p-4 rounded-xl border-l-4 border-primary shadow-sm hover:shadow-md transition-shadow">
               <h4 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
-                <Check className="w-4 h-4 text-primary" />
+                <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-primary" />
+                </div>
                 Como funciona a cobrança?
               </h4>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed ml-7">
                 A cobrança é mensal. Você escolhe o método de pagamento e pode cancelar quando quiser.
               </p>
             </div>
-            <div className="bg-background p-4 rounded-lg border-l-4 border-primary">
+            <div className="bg-background p-4 rounded-xl border-l-4 border-primary shadow-sm hover:shadow-md transition-shadow">
               <h4 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
-                <Check className="w-4 h-4 text-primary" />
+                <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-primary" />
+                </div>
                 Quais métodos de pagamento são aceitos?
               </h4>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed ml-7">
                 Aceitamos PIX, Cartão de Crédito (até 12x), Cartão de Débito e Boleto Bancário via Mercado Pago.
               </p>
             </div>
-            <div className="bg-background p-4 rounded-lg border-l-4 border-primary">
+            <div className="bg-background p-4 rounded-xl border-l-4 border-primary shadow-sm hover:shadow-md transition-shadow">
               <h4 className="font-bold text-foreground mb-2 text-sm flex items-center gap-2">
-                <Shield className="w-4 h-4 text-primary" />
+                <div className="w-5 h-5 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-3 h-3 text-primary" />
+                </div>
                 O pagamento é seguro?
               </h4>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-muted-foreground text-xs leading-relaxed ml-7">
                 100% seguro! Todos os pagamentos são processados pelo Mercado Pago, uma das plataformas mais confiáveis do Brasil. Seus dados estão protegidos.
               </p>
             </div>
