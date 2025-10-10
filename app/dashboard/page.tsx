@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useGenerations } from "@/hooks/use-generations"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
+import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -29,13 +30,69 @@ export default function DashboardPage() {
   const router = useRouter()
   const { used, remaining, limit, planName } = useGenerations()
   const { stats: dashboardStats, isLoading: isLoadingStats, refresh: refreshStats } = useDashboardStats(user?.id)
+  const { toast } = useToast()
+  const [previousPlan, setPreviousPlan] = useState<string | null>(null)
 
+  // Auto-refresh após pagamento bem-sucedido
   useEffect(() => {
     const subscriptionSuccess = new URLSearchParams(window.location.search).get("subscription")
     if (subscriptionSuccess === "success") {
       localStorage.removeItem("marketpro_pending_payment")
+
+      // Fazer refresh imediato
+      refreshUser()
+
+      // Mostrar notificação de processamento
+      toast({
+        title: "⏳ Processando pagamento...",
+        description: "Aguarde enquanto confirmamos seu pagamento. Isso pode levar alguns segundos.",
+      })
+
+      // Polling: verificar a cada 3 segundos por 60 segundos
+      let attempts = 0
+      const maxAttempts = 20 // 20 x 3s = 60s
+      const checkInterval = setInterval(async () => {
+        attempts++
+        console.log(`✅ Verificando atualização do plano... (${attempts}/${maxAttempts})`)
+
+        await refreshUser()
+
+        // Parar se o plano foi atualizado ou após 60 segundos
+        if (attempts >= maxAttempts || (user?.plan && user.plan !== 'free')) {
+          clearInterval(checkInterval)
+          if (user?.plan && user.plan !== 'free') {
+            console.log('🎉 Plano atualizado automaticamente!')
+            toast({
+              title: "🎉 Pagamento confirmado!",
+              description: `Seu plano ${user.plan === 'pro' ? 'PRO' : 'STARTER'} foi ativado com sucesso!`,
+            })
+            // Remover query param da URL
+            window.history.replaceState({}, '', '/dashboard')
+          } else if (attempts >= maxAttempts) {
+            toast({
+              title: "⏳ Ainda processando...",
+              description: "Seu pagamento está sendo processado. Atualize a página em alguns minutos.",
+            })
+          }
+        }
+      }, 3000)
+
+      return () => clearInterval(checkInterval)
     }
-  }, [router])
+  }, [router, refreshUser, user?.plan, toast])
+
+  // Detectar mudança de plano e mostrar notificação
+  useEffect(() => {
+    if (user?.plan && previousPlan && previousPlan !== user.plan && user.plan !== 'free') {
+      toast({
+        title: "🎉 Plano atualizado!",
+        description: `Seu plano ${user.plan === 'pro' ? 'PRO' : 'STARTER'} está ativo agora!`,
+      })
+    }
+    if (user?.plan) {
+      setPreviousPlan(user.plan)
+    }
+  }, [user?.plan, previousPlan, toast])
 
   if (authLoading) {
     return (
