@@ -63,6 +63,10 @@ export interface MercadoPagoPayment {
   }
   external_reference?: string
   description?: string
+  metadata?: {
+    plan_type?: string
+    [key: string]: any
+  }
 }
 
 const MERCADOPAGO_API = "https://api.mercadopago.com/preapproval_plan"
@@ -82,24 +86,24 @@ export class MercadoPagoService {
   }
 
   validateWebhookSignature(headers: any, body: any): boolean {
-    // Se não há webhook secret configurado, retornar true (modo permissivo)
+    // Se não há webhook secret configurado, FALHAR a validação
     if (!this.webhookSecret) {
-      secureLogger.warn('WEBHOOK_SECRET não configurado - validação ignorada', {
+      secureLogger.security('WEBHOOK_SECRET não configurado - REJEITANDO webhook', {
         source: 'mercadopago'
       })
-      return true
+      return false
     }
 
     const xSignature = headers['x-signature']
     const xRequestId = headers['x-request-id']
 
     if (!xSignature || !xRequestId) {
-      secureLogger.warn('Headers de assinatura ausentes - validação ignorada', {
+      secureLogger.security('Headers de assinatura ausentes - REJEITANDO webhook', {
         hasSignature: !!xSignature,
         hasRequestId: !!xRequestId,
         availableHeaders: Object.keys(headers)
       })
-      return true
+      return false
     }
 
     // Extrair ts e v1 do header x-signature
@@ -107,7 +111,7 @@ export class MercadoPagoService {
     const signatureParts = xSignature.split(',')
     let ts = ''
     let v1 = ''
-    
+
     for (const part of signatureParts) {
       const [key, value] = part.split('=')
       if (key === 'ts') {
@@ -129,23 +133,23 @@ export class MercadoPagoService {
     // VALIDAÇÃO DE TIMESTAMP (Prevenir replay attacks)
     const timestamp = parseInt(ts)
     const now = Math.floor(Date.now() / 1000)
-    const maxAge = 3600 // 1 hora (mais permissivo)
+    const maxAge = 3600 // 1 hora
 
     if (Math.abs(now - timestamp) > maxAge) {
-      secureLogger.warn('Webhook com timestamp antigo - mas continuando processamento', {
+      secureLogger.security('Webhook com timestamp antigo - REJEITADO', {
         timestamp,
         now,
-        difference: Math.abs(now - timestamp)
+        difference: Math.abs(now - timestamp),
+        maxAge
       })
-      // Retornar true para continuar processamento mesmo com timestamp antigo
-      return true
+      return false
     }
 
     // Construir a string para validação
     // Formato: id:{dataId};request-id:{xRequestId};ts:{ts};
     const dataId = body.data?.id || ''
     const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`
-    
+
     // Gerar HMAC SHA256
     const hmac = crypto.createHmac('sha256', this.webhookSecret)
     hmac.update(manifest)
@@ -168,17 +172,17 @@ export class MercadoPagoService {
     }
 
     if (!isValid) {
-      secureLogger.warn('Assinatura de webhook inválida - mas continuando processamento', {
+      secureLogger.security('Assinatura de webhook inválida - REJEITADO', {
         expected: v1.substring(0, 10) + '...',
         calculated: calculatedSignature.substring(0, 10) + '...',
         manifest,
         dataId
       })
-      // Retornar true para continuar processamento mesmo com assinatura inválida
-      return true
+      return false
     }
 
-    return isValid
+    secureLogger.info('✅ Webhook validado com sucesso', { dataId })
+    return true
   }
 
   async createPlan(plan: MercadoPagoPreapprovalPlan): Promise<MercadoPagoPreapprovalPlan> {

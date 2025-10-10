@@ -8,6 +8,8 @@ create table if not exists public.profiles (
   name text not null,
   plan text not null default 'free' check (plan in ('free', 'starter', 'pro')),
   generations_used integer not null default 0,
+  subscription_status text,
+  last_payment_id text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -19,10 +21,25 @@ create table if not exists public.subscriptions (
   plan_type text not null check (plan_type in ('starter', 'pro')),
   status text not null default 'active' check (status in ('active', 'cancelled', 'expired')),
   mercadopago_subscription_id text,
+  mercadopago_payment_id text,
+  payment_method text,
+  last_payment_date timestamp with time zone,
+  last_payment_amount numeric(10, 2),
   started_at timestamp with time zone default timezone('utc'::text, now()) not null,
   expires_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Tabela de histórico de webhooks (para evitar duplicados)
+create table if not exists public.webhook_events (
+  id uuid default uuid_generate_v4() primary key,
+  webhook_id text not null unique,
+  event_type text not null,
+  payment_id text,
+  status text not null,
+  processed_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- Tabela de gerações
@@ -38,6 +55,9 @@ create table if not exists public.generations (
 create index if not exists profiles_email_idx on public.profiles(email);
 create index if not exists subscriptions_user_id_idx on public.subscriptions(user_id);
 create index if not exists subscriptions_status_idx on public.subscriptions(status);
+create index if not exists webhook_events_webhook_id_idx on public.webhook_events(webhook_id);
+create index if not exists webhook_events_payment_id_idx on public.webhook_events(payment_id);
+create index if not exists webhook_events_created_at_idx on public.webhook_events(created_at desc);
 create index if not exists generations_user_id_idx on public.generations(user_id);
 create index if not exists generations_created_at_idx on public.generations(created_at desc);
 

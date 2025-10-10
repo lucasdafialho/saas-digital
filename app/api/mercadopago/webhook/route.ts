@@ -6,9 +6,6 @@ import secureLogger from "@/lib/logger"
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Cache simples para evitar processamento duplicado
-const processedWebhooks = new Set<string>()
-
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
@@ -21,49 +18,114 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: NextRequest) {
+  let webhookId = ''
+
   try {
     // Parse do body
     const body = await request.json()
-    
-    // Log básico
-    secureLogger.info("Webhook MercadoPago recebido", {
+
+    // Log detalhado do webhook recebido
+    secureLogger.info("🔔 Webhook MercadoPago recebido", {
       type: body.type,
       action: body.action,
       dataId: body.data?.id,
       liveMode: body.live_mode,
-      userId: body.user_id
+      userId: body.user_id,
+      webhookId: body.id,
+      dateCreated: body.date_created
     })
 
-    // Gerar ID único
-    const webhookId = `${body.type}_${body.data?.id}_${body.id}`
-
-    // Verificar se já foi processado
-    if (processedWebhooks.has(webhookId)) {
-      secureLogger.info("Webhook já processado", { webhookId })
-      return NextResponse.json({ received: true, cached: true })
+    // Validar estrutura básica do webhook
+    if (!body.type || !body.data?.id) {
+      secureLogger.warn("⚠️ Webhook com estrutura inválida", { body })
+      return NextResponse.json({
+        error: "Invalid webhook structure"
+      }, { status: 400 })
     }
 
-    // Processar apenas webhooks de pagamento
-    if (body.type === "payment" && body.action === "payment.updated") {
-      const paymentId = body.data?.id
+    // VALIDAR ASSINATURA DO WEBHOOK
+    const mpService = new MercadoPagoService()
+    const headers = {
+      'x-signature': request.headers.get('x-signature'),
+      'x-request-id': request.headers.get('x-request-id')
+    }
 
-      if (!paymentId) {
-        secureLogger.warn("Webhook sem payment ID", { body })
-        processedWebhooks.add(webhookId)
-        return NextResponse.json({ received: true })
-      }
+    const isValid = mpService.validateWebhookSignature(headers, body)
+
+    if (!isValid) {
+      secureLogger.security('🚫 Webhook rejeitado - assinatura inválida', {
+        dataId: body.data?.id,
+        type: body.type
+      })
+      return NextResponse.json({
+        error: "Invalid signature"
+      }, { status: 401 })
+    }
+
+    // Verificar conexão com Supabase
+    if (!supabaseAdmin) {
+      secureLogger.error("❌ Supabase Admin não configurado")
+      return NextResponse.json({
+        error: "Database connection error"
+      }, { status: 500 })
+    }
+
+    // Gerar ID único mais robusto
+    webhookId = `${body.id}_${body.data.id}_${Date.now()}`
+
+    // Verificar se já foi processado (no banco de dados)
+    const { data: existingWebhook } = await supabaseAdmin
+      .from('webhook_events')
+      .select('id, processed_at')
+      .eq('webhook_id', webhookId)
+      .maybeSingle()
+
+    if (existingWebhook) {
+      secureLogger.info("✅ Webhook já processado", {
+        webhookId,
+        processedAt: existingWebhook.processed_at
+      })
+      return NextResponse.json({
+        received: true,
+        status: "already_processed"
+      })
+    }
+
+    // Registrar webhook no banco (marca como em processamento)
+    await supabaseAdmin
+      .from('webhook_events')
+      .insert({
+        webhook_id: webhookId,
+        event_type: body.type,
+        payment_id: body.data.id,
+        status: 'processing'
+      })
+
+    // Processar webhooks de pagamento
+    if (body.type === "payment") {
+      const paymentId = body.data.id
+
+      secureLogger.info("💰 Processando pagamento", {
+        paymentId,
+        action: body.action
+      })
 
       try {
-        // Buscar detalhes do pagamento
+        // Inicializar serviço do MercadoPago
         const mpService = new MercadoPagoService()
+        
+        // Buscar detalhes completos do pagamento
         const payment = await mpService.getPayment(paymentId.toString())
 
-        secureLogger.info("Pagamento obtido", {
+        secureLogger.info("📋 Detalhes do pagamento obtidos", {
           id: payment.id,
           status: payment.status,
+          statusDetail: payment.status_detail,
           email: payment.payer?.email,
           amount: payment.transaction_amount,
-          externalReference: payment.external_reference
+          externalReference: payment.external_reference,
+          dateApproved: payment.date_approved,
+          paymentMethod: payment.payment_method_id
         })
 
         // Processar apenas pagamentos aprovados
@@ -71,181 +133,320 @@ export async function POST(request: NextRequest) {
           const userEmail = payment.payer?.email
           const externalRef = payment.external_reference
 
-          if (!userEmail || !externalRef) {
-            secureLogger.warn("Dados insuficientes no pagamento", {
-              hasEmail: !!userEmail,
-              hasExternalRef: !!externalRef,
-              paymentId
+          // Validar dados essenciais
+          if (!userEmail) {
+            secureLogger.error("❌ Email do pagador não encontrado", {
+              paymentId,
+              payer: payment.payer
             })
-            processedWebhooks.add(webhookId)
-            return NextResponse.json({ received: true })
+            return NextResponse.json({
+              error: "Missing payer email"
+            }, { status: 400 })
           }
 
-          // Extrair tipo de plano da referência
-          const [planType, ...userIdParts] = externalRef.split("_")
-          const userIdentifier = userIdParts.join("_")
+          // Identificar plano: prioridade metadata > external_reference > valor
+          let planType = "starter" // Default
 
-          if (!["starter", "pro"].includes(planType)) {
-            secureLogger.warn("Tipo de plano inválido", {
+          // 1. Verificar metadata primeiro (mais confiável)
+          if (payment.metadata?.plan_type) {
+            planType = payment.metadata.plan_type
+            secureLogger.info("✅ Plano identificado via metadata", {
               planType,
-              externalRef,
-              paymentId
+              metadata: payment.metadata
             })
-            processedWebhooks.add(webhookId)
-            return NextResponse.json({ received: true })
+          }
+          // 2. Tentar external_reference
+          else if (externalRef) {
+            const [extractedPlan] = externalRef.split("_")
+            if (["starter", "pro"].includes(extractedPlan)) {
+              planType = extractedPlan
+              secureLogger.info("✅ Plano identificado via external_reference", {
+                planType,
+                externalRef
+              })
+            }
+          }
+          // 3. Fallback: identificar pelo valor (menos confiável)
+          else {
+            secureLogger.warn("⚠️ Identificando plano pelo valor (fallback)", {
+              amount: payment.transaction_amount
+            })
+
+            // Ajustar conforme seus valores de planos exatos
+            const amount = payment.transaction_amount
+            if (amount >= 149.9 - 5 && amount <= 149.9 + 5) {
+              planType = "pro"
+            } else if (amount >= 1.0 - 0.5 && amount <= 1.0 + 0.5) {
+              planType = "starter"
+            }
           }
 
-          secureLogger.info("Processando upgrade de plano", {
+          secureLogger.info("🎯 Plano identificado", {
+            planType,
             email: userEmail,
-            plan: planType,
             amount: payment.transaction_amount,
             paymentId
           })
 
-          // Buscar usuário
+          // Verificar conexão com Supabase
           if (!supabaseAdmin) {
-            secureLogger.error("Supabase Admin não configurado")
-            processedWebhooks.add(webhookId)
-            return NextResponse.json({ received: true })
+            secureLogger.error("❌ Supabase Admin não configurado")
+            return NextResponse.json({
+              error: "Database connection error"
+            }, { status: 500 })
           }
 
+          // Buscar usuário pelo email
           const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
-            .select('id, plan, email')
+            .select('id, plan, email, updated_at')
             .eq('email', userEmail)
             .single()
 
           if (profileError || !profile) {
-            secureLogger.error("Usuário não encontrado", {
+            secureLogger.error("❌ Usuário não encontrado", {
               email: userEmail,
-              error: profileError?.message
+              error: profileError?.message,
+              code: profileError?.code
             })
-            processedWebhooks.add(webhookId)
-            return NextResponse.json({ received: true })
+
+            // Tentar criar um perfil básico se não existir
+            if (profileError?.code === 'PGRST116') { // Not found
+              secureLogger.info("📝 Tentando criar perfil para o usuário", {
+                email: userEmail
+              })
+
+              // Você pode implementar a criação do perfil aqui se necessário
+              // Ou retornar erro para investigação manual
+            }
+
+            return NextResponse.json({
+              error: "User not found"
+            }, { status: 404 })
           }
 
-          // Calcular data de expiração (30 dias)
-          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          secureLogger.info("👤 Usuário encontrado", {
+            userId: profile.id,
+            currentPlan: profile.plan,
+            email: profile.email
+          })
+
+          // Calcular datas
+          const now = new Date()
+          const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 dias
 
           // Verificar assinatura existente
-          const { data: existingSub } = await supabaseAdmin
+          const { data: existingSub, error: subError } = await supabaseAdmin
             .from('subscriptions')
-            .select('id, plan_type, status')
+            .select('id, plan_type, status, expires_at')
             .eq('user_id', profile.id)
             .eq('status', 'active')
-            .single()
+            .maybeSingle() // Usar maybeSingle ao invés de single
 
+          if (subError && subError.code !== 'PGRST116') {
+            secureLogger.error("❌ Erro ao buscar subscription", {
+              error: subError.message,
+              userId: profile.id
+            })
+          }
+
+          let subscriptionResult
+          
           if (existingSub) {
             // Atualizar assinatura existente
-            const { error: updateSubError } = await supabaseAdmin
+            secureLogger.info("🔄 Atualizando assinatura existente", {
+              subscriptionId: existingSub.id,
+              oldPlan: existingSub.plan_type,
+              newPlan: planType
+            })
+
+            const { data: updated, error: updateSubError } = await supabaseAdmin
               .from('subscriptions')
               .update({
                 plan_type: planType,
                 mercadopago_subscription_id: payment.id.toString(),
-                updated_at: new Date().toISOString(),
-                expires_at: expiresAt
+                mercadopago_payment_id: payment.id.toString(), // Adicionar ID do pagamento
+                updated_at: now.toISOString(),
+                expires_at: expiresAt.toISOString(),
+                last_payment_date: payment.date_approved || now.toISOString(),
+                last_payment_amount: payment.transaction_amount,
+                payment_method: payment.payment_method_id
               })
               .eq('id', existingSub.id)
+              .select()
+              .single()
 
             if (updateSubError) {
-              secureLogger.error("Erro ao atualizar subscription", {
+              secureLogger.error("❌ Erro ao atualizar subscription", {
                 error: updateSubError.message,
                 subscriptionId: existingSub.id
               })
-            } else {
-              secureLogger.info("Subscription atualizada com sucesso", {
-                subscriptionId: existingSub.id,
-                plan: planType
-              })
+              throw updateSubError
             }
+            
+            subscriptionResult = updated
           } else {
             // Criar nova assinatura
-            const { error: createSubError } = await supabaseAdmin
+            secureLogger.info("✨ Criando nova assinatura", {
+              userId: profile.id,
+              plan: planType
+            })
+
+            const { data: created, error: createSubError } = await supabaseAdmin
               .from('subscriptions')
               .insert({
                 user_id: profile.id,
                 plan_type: planType,
                 status: 'active',
                 mercadopago_subscription_id: payment.id.toString(),
-                started_at: new Date().toISOString(),
-                expires_at: expiresAt
+                mercadopago_payment_id: payment.id.toString(),
+                started_at: now.toISOString(),
+                expires_at: expiresAt.toISOString(),
+                last_payment_date: payment.date_approved || now.toISOString(),
+                last_payment_amount: payment.transaction_amount,
+                payment_method: payment.payment_method_id,
+                created_at: now.toISOString(),
+                updated_at: now.toISOString()
               })
+              .select()
+              .single()
 
             if (createSubError) {
-              secureLogger.error("Erro ao criar subscription", {
+              secureLogger.error("❌ Erro ao criar subscription", {
                 error: createSubError.message,
-                userId: profile.id
-              })
-            } else {
-              secureLogger.info("Nova subscription criada com sucesso", {
                 userId: profile.id,
-                plan: planType
+                details: createSubError
               })
+              throw createSubError
             }
+            
+            subscriptionResult = created
           }
 
           // Atualizar plano no perfil do usuário
-          const { error: updateProfileError } = await supabaseAdmin
+          const { data: updatedProfile, error: updateProfileError } = await supabaseAdmin
             .from('profiles')
             .update({
               plan: planType,
-              updated_at: new Date().toISOString()
+              updated_at: now.toISOString(),
+              last_payment_id: payment.id.toString(),
+              subscription_status: 'active'
             })
             .eq('id', profile.id)
+            .select()
+            .single()
 
           if (updateProfileError) {
-            secureLogger.error("Erro ao atualizar perfil", {
+            secureLogger.error("❌ Erro ao atualizar perfil", {
               error: updateProfileError.message,
               userId: profile.id
             })
-          } else {
-            secureLogger.info("Plano atualizado com sucesso", {
-              userId: profile.id,
-              email: userEmail,
-              oldPlan: profile.plan,
-              newPlan: planType,
-              paymentId: payment.id
-            })
+            // Não fazer throw aqui pois a subscription já foi criada/atualizada
           }
+
+          // Log de sucesso
+          secureLogger.info("✅ PAGAMENTO PROCESSADO COM SUCESSO!", {
+            userId: profile.id,
+            email: userEmail,
+            oldPlan: profile.plan,
+            newPlan: planType,
+            paymentId: payment.id,
+            subscriptionId: subscriptionResult?.id,
+            expiresAt: expiresAt.toISOString(),
+            amount: payment.transaction_amount
+          })
+
+          // Atualizar status do webhook para 'completed'
+          await supabaseAdmin
+            .from('webhook_events')
+            .update({ status: 'completed' })
+            .eq('webhook_id', webhookId)
+
+          // Retornar sucesso
+          return NextResponse.json({
+            received: true,
+            status: "success",
+            processed: {
+              paymentId: payment.id,
+              userId: profile.id,
+              plan: planType,
+              subscriptionId: subscriptionResult?.id
+            }
+          })
+          
         } else {
-          secureLogger.info("Pagamento com status não aprovado", {
+          // Log para pagamentos não aprovados
+          secureLogger.info("⏳ Pagamento com status não aprovado", {
             status: payment.status,
             statusDetail: payment.status_detail,
             paymentId: payment.id
           })
+          
+          return NextResponse.json({ 
+            received: true,
+            status: "payment_not_approved",
+            paymentStatus: payment.status
+          })
         }
+        
       } catch (paymentError) {
-        secureLogger.error("Erro ao processar pagamento", {
+        secureLogger.error("❌ Erro ao processar pagamento", {
           error: paymentError instanceof Error ? paymentError.message : 'Unknown',
+          stack: paymentError instanceof Error ? paymentError.stack : undefined,
           paymentId,
           webhookId
         })
-        // Marcar como processado mesmo com erro para evitar loops
-        processedWebhooks.add(webhookId)
-        return NextResponse.json({ received: true })
+
+        // Marcar webhook como failed no banco
+        await supabaseAdmin
+          .from('webhook_events')
+          .update({ status: 'failed' })
+          .eq('webhook_id', webhookId)
+
+        // Retornar erro HTTP 500 para permitir retry pelo MercadoPago
+        return NextResponse.json({
+          error: "Processing error",
+          details: paymentError instanceof Error ? paymentError.message : 'Unknown error'
+        }, { status: 500 })
+      }
+    } else {
+      // Log para outros tipos de webhook
+      secureLogger.info("📨 Webhook de tipo não processado", {
+        type: body.type,
+        action: body.action
+      })
+      
+      return NextResponse.json({ 
+        received: true,
+        status: "webhook_type_not_processed"
+      })
+    }
+
+  } catch (error) {
+    secureLogger.error("❌ ERRO GERAL NO WEBHOOK", {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      webhookId
+    })
+
+    // Marcar webhook como failed no banco se possível
+    if (webhookId && supabaseAdmin) {
+      try {
+        await supabaseAdmin
+          .from('webhook_events')
+          .update({ status: 'failed' })
+          .eq('webhook_id', webhookId)
+      } catch (updateError) {
+        secureLogger.error("❌ Erro ao atualizar status do webhook", {
+          error: updateError instanceof Error ? updateError.message : 'Unknown'
+        })
       }
     }
 
-    // Marcar webhook como processado
-    processedWebhooks.add(webhookId)
-
-    // Retornar sucesso
-    return NextResponse.json({ received: true }, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
-    })
-
-  } catch (error) {
-    secureLogger.error("Erro geral ao processar webhook", {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    })
-
-    // Retornar sucesso para evitar retries
+    // Retornar status HTTP 500 para permitir retry pelo MercadoPago
     return NextResponse.json({
-      received: true,
-      error: "Processing error but webhook received"
-    }, { status: 200 })
+      error: "General processing error",
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
