@@ -12,6 +12,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { getErrorMessage, isValidEmail, isValidPassword } from "@/lib/error-messages"
+import { useCSRF } from "@/hooks/use-csrf"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -22,6 +23,7 @@ export default function LoginPage() {
 
   const { login } = useAuth()
   const router = useRouter()
+  const { token: csrfToken, loading: csrfLoading } = useCSRF()
 
   useEffect(() => {
     setIsLoading(false)
@@ -54,10 +56,20 @@ export default function LoginPage() {
     }
 
     try {
+      // Verifica se o token CSRF está disponível
+      if (!csrfToken) {
+        setError("Erro ao carregar página. Recarregue e tente novamente.")
+        setIsLoading(false)
+        return
+      }
+
       // Verifica rate limit
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
         body: JSON.stringify({ email, password })
       })
 
@@ -161,9 +173,9 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isLoading}
+                disabled={isLoading || csrfLoading}
               >
-                {isLoading ? "Entrando..." : "Entrar"}
+                {isLoading ? "Entrando..." : csrfLoading ? "Carregando..." : "Entrar"}
               </Button>
             </form>
 

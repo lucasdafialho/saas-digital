@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { getErrorMessage, isValidEmail, isValidPassword, isValidName, getPasswordRequirements, getPasswordStrength, getPasswordErrorMessage } from "@/lib/error-messages"
 import { EmailConfirmationModal } from "@/components/email-confirmation-modal"
+import { useCSRF } from "@/hooks/use-csrf"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -32,6 +33,7 @@ export default function RegisterPage() {
 
   const { register } = useAuth()
   const router = useRouter()
+  const { token: csrfToken, loading: csrfLoading } = useCSRF()
 
   useEffect(() => {
     setIsLoading(false)
@@ -321,9 +323,9 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isLoading}
+                disabled={isLoading || csrfLoading}
               >
-                {isLoading ? "Criando conta..." : "Criar conta"}
+                {isLoading ? "Criando conta..." : csrfLoading ? "Carregando..." : "Criar conta"}
               </Button>
             </form>
 

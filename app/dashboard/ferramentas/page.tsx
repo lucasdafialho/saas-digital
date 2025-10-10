@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { useCSRF } from "@/hooks/use-csrf"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -52,6 +53,7 @@ const budgets = ["Baixo", "Médio", "Alto"]
 const timeframes = ["7 dias", "14 dias", "30 dias", "60 dias"]
 
 export default function AIToolsPage() {
+  const { token: csrfToken } = useCSRF()
   const resultsRef = useRef<HTMLDivElement | null>(null)
   const [selectedType, setSelectedType] = useState<string>(funnelTypes[0])
   const [form, setForm] = useState({
@@ -69,12 +71,19 @@ export default function AIToolsPage() {
 
   const handleGenerate = async () => {
     if (!form.product || !form.audience || !form.offer) return
+    if (!csrfToken) {
+      console.error('Token CSRF não disponível')
+      return
+    }
     setIsGenerating(true)
     setStrategy(null)
     try {
       const res = await fetch("/api/generate-funnel", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
         body: JSON.stringify({
           product: form.product,
           audience: form.audience,
