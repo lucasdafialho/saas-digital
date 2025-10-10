@@ -141,6 +141,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true, warning: "No payment ID" })
       }
 
+      // Se for modo teste, apenas confirmar recebimento sem processar
+      if (isTestMode) {
+        secureLogger.info("Webhook de teste recebido - não processando", { 
+          paymentId,
+          webhookId 
+        })
+        processedWebhooks.set(webhookId, Date.now())
+        return NextResponse.json({ 
+          received: true, 
+          test_mode: true,
+          message: "Test webhook received successfully" 
+        }, {
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          }
+        })
+      }
+
       try {
         // Buscar informações do pagamento
         const payment = await mpService.getPayment(paymentId.toString())
@@ -326,6 +344,24 @@ export async function POST(request: NextRequest) {
     // Processar assinaturas recorrentes
     if (body.type === "subscription_preapproval" || body.type === "subscription_authorized_payment") {
       const subscriptionId = body.data.id
+
+      // Se for modo teste, apenas confirmar recebimento sem processar
+      if (isTestMode) {
+        secureLogger.info("Webhook de assinatura em teste recebido - não processando", { 
+          subscriptionId,
+          webhookId 
+        })
+        processedWebhooks.set(webhookId, Date.now())
+        return NextResponse.json({ 
+          received: true, 
+          test_mode: true,
+          message: "Test webhook received successfully" 
+        }, {
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          }
+        })
+      }
 
       try {
         // Buscar informações da assinatura
