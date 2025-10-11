@@ -86,19 +86,26 @@ export class MercadoPagoService {
   }
 
   validateWebhookSignature(headers: any, body: any): boolean {
-    // Modo permissivo em desenvolvimento (REMOVER EM PRODUÇÃO!)
-    const isDevMode = process.env.NODE_ENV === 'development' || process.env.MERCADOPAGO_WEBHOOK_SKIP_VALIDATION === 'true'
+    // MODO DESENVOLVIMENTO: Apenas local (localhost), NUNCA em produção
+    const isLocalDev = process.env.NODE_ENV === 'development' &&
+                       (process.env.VERCEL !== '1') &&
+                       process.env.MERCADOPAGO_WEBHOOK_SKIP_VALIDATION === 'true'
 
     // Se não há webhook secret configurado
     if (!this.webhookSecret) {
-      if (isDevMode) {
-        secureLogger.warn('⚠️ WEBHOOK_SECRET não configurado - MODO DESENVOLVIMENTO (validação ignorada)', {
-          source: 'mercadopago'
+      if (isLocalDev) {
+        secureLogger.warn('⚠️ WEBHOOK_SECRET não configurado - MODO LOCAL DEV APENAS (validação ignorada)', {
+          source: 'mercadopago',
+          environment: 'local-development'
         })
         return true
       }
-      secureLogger.security('WEBHOOK_SECRET não configurado - REJEITANDO webhook', {
-        source: 'mercadopago'
+
+      // PRODUÇÃO/VERCEL: SEMPRE rejeitar sem secret
+      secureLogger.security('🚫 WEBHOOK_SECRET não configurado - REJEITANDO webhook', {
+        source: 'mercadopago',
+        environment: process.env.VERCEL ? 'vercel' : 'unknown',
+        nodeEnv: process.env.NODE_ENV
       })
       return false
     }
@@ -113,9 +120,9 @@ export class MercadoPagoService {
         availableHeaders: Object.keys(headers)
       })
 
-      // Modo permissivo: aceitar mesmo sem headers em desenvolvimento
-      if (isDevMode) {
-        secureLogger.warn('⚠️ Headers ausentes - MODO DESENVOLVIMENTO (validação ignorada)')
+      // APENAS em desenvolvimento local
+      if (isLocalDev) {
+        secureLogger.warn('⚠️ Headers ausentes - MODO LOCAL DEV APENAS (validação ignorada)')
         return true
       }
 
@@ -282,11 +289,18 @@ export class MercadoPagoService {
 
   async getPayment(paymentId: string): Promise<MercadoPagoPayment> {
     try {
+      // Criar AbortController para timeout de 8 segundos
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000)
+
       const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
         },
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -296,22 +310,31 @@ export class MercadoPagoService {
           error: errorText,
           paymentId
         })
-        
+
         if (response.status === 404) {
           throw new Error(`Pagamento não encontrado: ${paymentId}`)
         }
-        
+
         throw new Error(`Erro ao buscar pagamento: ${response.status} - ${errorText}`)
       }
 
       const payment = await response.json()
-      
+
       if (!payment || !payment.id) {
         throw new Error("Resposta inválida da API do MercadoPago")
       }
 
       return payment
     } catch (error) {
+      // Verificar se foi timeout
+      if (error instanceof Error && error.name === 'AbortError') {
+        secureLogger.error("Timeout ao buscar pagamento no MercadoPago", {
+          paymentId,
+          timeout: '8s'
+        })
+        throw new Error(`Timeout ao buscar pagamento: ${paymentId}`)
+      }
+
       secureLogger.error("Erro ao buscar pagamento no MercadoPago", {
         error: error instanceof Error ? error.message : 'Unknown error',
         paymentId
