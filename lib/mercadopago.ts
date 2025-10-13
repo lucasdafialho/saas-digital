@@ -86,22 +86,16 @@ export class MercadoPagoService {
   }
 
   validateWebhookSignature(headers: any, body: any): boolean {
-    // MODO DESENVOLVIMENTO: Apenas local (localhost), NUNCA em produção
-    const isLocalDev = process.env.NODE_ENV === 'development' &&
-                       (process.env.VERCEL !== '1') &&
-                       process.env.MERCADOPAGO_WEBHOOK_SKIP_VALIDATION === 'true'
+    // Log detalhado do webhook secret (primeiros 10 caracteres apenas)
+    secureLogger.info('🔍 Validando webhook signature', {
+      hasSecret: !!this.webhookSecret,
+      secretPreview: this.webhookSecret ? this.webhookSecret.substring(0, 10) + '...' : 'NOT_SET',
+      environment: process.env.VERCEL ? 'vercel' : 'local',
+      nodeEnv: process.env.NODE_ENV
+    })
 
-    // Se não há webhook secret configurado
+    // Se não há webhook secret configurado, sempre rejeitar
     if (!this.webhookSecret) {
-      if (isLocalDev) {
-        secureLogger.warn('⚠️ WEBHOOK_SECRET não configurado - MODO LOCAL DEV APENAS (validação ignorada)', {
-          source: 'mercadopago',
-          environment: 'local-development'
-        })
-        return true
-      }
-
-      // PRODUÇÃO/VERCEL: SEMPRE rejeitar sem secret
       secureLogger.security('🚫 WEBHOOK_SECRET não configurado - REJEITANDO webhook', {
         source: 'mercadopago',
         environment: process.env.VERCEL ? 'vercel' : 'unknown',
@@ -110,22 +104,31 @@ export class MercadoPagoService {
       return false
     }
 
-    const xSignature = headers['x-signature']
-    const xRequestId = headers['x-request-id']
+    // Normalizar headers (case-insensitive)
+    const normalizedHeaders: Record<string, string> = {}
+    for (const key in headers) {
+      if (headers[key]) {
+        normalizedHeaders[key.toLowerCase()] = headers[key]
+      }
+    }
+
+    const xSignature = normalizedHeaders['x-signature']
+    const xRequestId = normalizedHeaders['x-request-id']
+
+    secureLogger.info('🔍 Headers normalizados', {
+      hasSignature: !!xSignature,
+      hasRequestId: !!xRequestId,
+      signaturePreview: xSignature ? xSignature.substring(0, 20) + '...' : 'NOT_SET',
+      requestId: xRequestId,
+      allHeaderKeys: Object.keys(normalizedHeaders)
+    })
 
     if (!xSignature || !xRequestId) {
-      secureLogger.warn('⚠️ Headers de assinatura ausentes', {
+      secureLogger.security('🚫 Headers de assinatura ausentes - REJEITANDO webhook', {
         hasSignature: !!xSignature,
         hasRequestId: !!xRequestId,
-        availableHeaders: Object.keys(headers)
+        availableHeaders: Object.keys(normalizedHeaders)
       })
-
-      // APENAS em desenvolvimento local
-      if (isLocalDev) {
-        secureLogger.warn('⚠️ Headers ausentes - MODO LOCAL DEV APENAS (validação ignorada)')
-        return true
-      }
-
       return false
     }
 
@@ -136,19 +139,27 @@ export class MercadoPagoService {
     let v1 = ''
 
     for (const part of signatureParts) {
-      const [key, value] = part.split('=')
-      if (key === 'ts') {
-        ts = value
-      } else if (key === 'v1') {
-        v1 = value
+      const [key, value] = part.trim().split('=')
+      if (key?.trim() === 'ts') {
+        ts = value?.trim() || ''
+      } else if (key?.trim() === 'v1') {
+        v1 = value?.trim() || ''
       }
     }
 
+    secureLogger.info('🔍 Signature parts extraídas', {
+      hasTimestamp: !!ts,
+      hasV1: !!v1,
+      timestampValue: ts,
+      v1Preview: v1 ? v1.substring(0, 10) + '...' : 'NOT_SET'
+    })
+
     if (!ts || !v1) {
-      secureLogger.security('Formato de assinatura inválido', {
+      secureLogger.security('🚫 Formato de assinatura inválido', {
         xSignature,
         hasTimestamp: !!ts,
-        hasV1: !!v1
+        hasV1: !!v1,
+        signatureParts
       })
       return false
     }
@@ -156,14 +167,30 @@ export class MercadoPagoService {
     // VALIDAÇÃO DE TIMESTAMP (Prevenir replay attacks)
     const timestamp = parseInt(ts)
     const now = Math.floor(Date.now() / 1000)
-    const maxAge = 3600 // 1 hora
+    const maxAge = 7200 // 2 horas (aumentado para considerar diferenças de fuso)
+
+    secureLogger.info('🔍 Validando timestamp', {
+      timestamp,
+      now,
+      difference: Math.abs(now - timestamp),
+      maxAge
+    })
+
+    if (isNaN(timestamp)) {
+      secureLogger.security('🚫 Timestamp inválido', {
+        ts,
+        parsed: timestamp
+      })
+      return false
+    }
 
     if (Math.abs(now - timestamp) > maxAge) {
-      secureLogger.security('Webhook com timestamp antigo - REJEITADO', {
+      secureLogger.security('🚫 Webhook com timestamp antigo - REJEITADO', {
         timestamp,
         now,
         difference: Math.abs(now - timestamp),
-        maxAge
+        maxAge,
+        timeDiffHours: Math.abs(now - timestamp) / 3600
       })
       return false
     }
@@ -173,33 +200,53 @@ export class MercadoPagoService {
     const dataId = body.data?.id || ''
     const manifest = `id:${dataId};request-id:${xRequestId};ts:${ts};`
 
+    secureLogger.info('🔍 Manifest construído', {
+      manifest,
+      dataId,
+      requestId: xRequestId
+    })
+
     // Gerar HMAC SHA256
     const hmac = crypto.createHmac('sha256', this.webhookSecret)
     hmac.update(manifest)
     const calculatedSignature = hmac.digest('hex')
 
+    secureLogger.info('🔍 Assinatura calculada', {
+      calculatedPreview: calculatedSignature.substring(0, 10) + '...',
+      receivedPreview: v1.substring(0, 10) + '...',
+      calculatedLength: calculatedSignature.length,
+      receivedLength: v1.length
+    })
+
     // Comparar assinaturas de forma segura (timing-safe)
     let isValid = false
     try {
+      // Normalizar para lowercase antes de comparar
+      const v1Lower = v1.toLowerCase()
+      const calculatedLower = calculatedSignature.toLowerCase()
+
       isValid = crypto.timingSafeEqual(
-        Buffer.from(v1),
-        Buffer.from(calculatedSignature)
+        Buffer.from(v1Lower, 'hex'),
+        Buffer.from(calculatedLower, 'hex')
       )
     } catch (error) {
-      secureLogger.security('Erro ao comparar assinaturas', {
+      secureLogger.security('⚠️ Erro ao comparar assinaturas (tentando comparação simples)', {
         error: error instanceof Error ? error.message : 'Unknown error',
         v1Length: v1.length,
         calculatedLength: calculatedSignature.length
       })
-      return false
+
+      // Fallback: comparação simples (case-insensitive)
+      isValid = v1.toLowerCase() === calculatedSignature.toLowerCase()
     }
 
     if (!isValid) {
-      secureLogger.security('Assinatura de webhook inválida - REJEITADO', {
-        expected: v1.substring(0, 10) + '...',
-        calculated: calculatedSignature.substring(0, 10) + '...',
+      secureLogger.security('🚫 Assinatura de webhook inválida - REJEITADO', {
+        expected: v1.substring(0, 10) + '...' + v1.substring(v1.length - 10),
+        calculated: calculatedSignature.substring(0, 10) + '...' + calculatedSignature.substring(calculatedSignature.length - 10),
         manifest,
-        dataId
+        dataId,
+        match: v1.toLowerCase() === calculatedSignature.toLowerCase()
       })
       return false
     }

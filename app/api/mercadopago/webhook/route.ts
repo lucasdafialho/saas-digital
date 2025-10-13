@@ -52,17 +52,35 @@ export async function POST(request: NextRequest) {
     }
 
     // VALIDAR ASSINATURA DO WEBHOOK
-    const mpService = new MercadoPagoService()
+    let mpService: MercadoPagoService
+    try {
+      mpService = new MercadoPagoService()
+    } catch (error) {
+      secureLogger.error("❌ Erro ao inicializar MercadoPagoService", {
+        error: error instanceof Error ? error.message : 'Unknown',
+        hasAccessToken: !!process.env.MERCADOPAGO_ACCESS_TOKEN
+      })
+      return NextResponse.json({
+        error: "Service configuration error"
+      }, { status: 500 })
+    }
+
     const headers = {
       'x-signature': request.headers.get('x-signature'),
       'x-request-id': request.headers.get('x-request-id')
     }
 
-    // Log detalhado dos headers recebidos
+    // Log detalhado dos headers recebidos (incluindo valores parciais)
     secureLogger.info('🔍 Headers recebidos do webhook', {
       hasXSignature: !!headers['x-signature'],
       hasXRequestId: !!headers['x-request-id'],
-      allHeaders: Object.fromEntries(request.headers.entries())
+      signaturePreview: headers['x-signature'] ? headers['x-signature'].substring(0, 30) + '...' : 'NOT_SET',
+      requestId: headers['x-request-id'],
+      allHeaderKeys: Array.from(request.headers.keys()),
+      hasSecret: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
+      secretPreview: process.env.MERCADOPAGO_WEBHOOK_SECRET
+        ? process.env.MERCADOPAGO_WEBHOOK_SECRET.substring(0, 10) + '...'
+        : 'NOT_SET'
     })
 
     const isValid = mpService.validateWebhookSignature(headers, body)
@@ -72,7 +90,8 @@ export async function POST(request: NextRequest) {
         dataId: body.data?.id,
         type: body.type,
         hasSecret: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
-        nodeEnv: process.env.NODE_ENV
+        nodeEnv: process.env.NODE_ENV,
+        vercel: process.env.VERCEL
       })
       return NextResponse.json({
         error: "Invalid signature"
@@ -113,22 +132,44 @@ export async function POST(request: NextRequest) {
         webhook_id: webhookId,
         event_type: body.type,
         payment_id: body.data.id,
-        status: 'processing'
+        status: 'processing',
+        raw_data: body
       }, {
         onConflict: 'webhook_id',
-        ignoreDuplicates: true
+        ignoreDuplicates: false // Permitir que retorne dados mesmo se já existe
       })
+      .select()
+      .single()
 
     // Se falhou ao inserir por duplicação, significa que outro processo já está processando
-    if (insertError && insertError.code === '23505') {
-      secureLogger.info("⚠️ Webhook já em processamento por outra instância", {
+    if (insertError) {
+      if (insertError.code === '23505') {
+        secureLogger.info("⚠️ Webhook já em processamento por outra instância", {
+          webhookId,
+          errorCode: insertError.code
+        })
+        return NextResponse.json({
+          received: true,
+          status: "already_processing"
+        })
+      }
+
+      // Outro tipo de erro de banco de dados
+      secureLogger.error("❌ Erro ao registrar webhook no banco", {
+        error: insertError.message,
+        code: insertError.code,
         webhookId
       })
       return NextResponse.json({
-        received: true,
-        status: "already_processing"
-      })
+        error: "Database error",
+        details: insertError.message
+      }, { status: 500 })
     }
+
+    secureLogger.info("✅ Webhook registrado no banco", {
+      webhookId,
+      status: 'processing'
+    })
 
     // Processar webhooks de pagamento
     if (body.type === "payment") {
@@ -141,7 +182,31 @@ export async function POST(request: NextRequest) {
 
       try {
         // Buscar detalhes completos do pagamento (reutilizando mpService já criado)
-        const payment = await mpService.getPayment(paymentId.toString())
+        secureLogger.info("🔍 Buscando detalhes do pagamento na API do MercadoPago", {
+          paymentId: paymentId.toString()
+        })
+
+        let payment
+        try {
+          payment = await mpService.getPayment(paymentId.toString())
+        } catch (paymentFetchError) {
+          secureLogger.error("❌ Erro ao buscar pagamento na API do MercadoPago", {
+            error: paymentFetchError instanceof Error ? paymentFetchError.message : 'Unknown',
+            paymentId: paymentId.toString()
+          })
+
+          // Marcar webhook como failed
+          await supabaseAdmin
+            .from('webhook_events')
+            .update({ status: 'failed' })
+            .eq('webhook_id', webhookId)
+
+          // Retornar 500 para o MercadoPago tentar novamente
+          return NextResponse.json({
+            error: "Failed to fetch payment details",
+            details: paymentFetchError instanceof Error ? paymentFetchError.message : 'Unknown'
+          }, { status: 500 })
+        }
 
         secureLogger.info("📋 Detalhes do pagamento obtidos", {
           id: payment.id,
