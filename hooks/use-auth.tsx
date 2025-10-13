@@ -32,24 +32,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
   const initializingRef = useRef(false)
 
-  const loadUserProfile = useCallback(async (authUser: SupabaseUser): Promise<User | null> => {
-    try {
-      const defaultUser = {
-        id: authUser.id,
-        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
-        email: authUser.email || '',
-        plan: 'free' as const,
-        createdAt: authUser.created_at,
-        generationsUsed: 0
-      }
+  const loadUserProfile = useCallback(async (authUser: SupabaseUser): Promise<User> => {
+    console.log('[AUTH] loadUserProfile chamado para:', authUser.email)
+    
+    const defaultUser: User = {
+      id: authUser.id,
+      name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuário',
+      email: authUser.email || '',
+      plan: 'free',
+      createdAt: authUser.created_at,
+      generationsUsed: 0
+    }
 
+    try {
+      console.log('[AUTH] Buscando perfil no banco...')
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('id, name, email, plan, created_at, generations_used')
         .eq('id', authUser.id)
         .maybeSingle()
 
-      if (error || !profile) {
+      if (error) {
+        console.error('[AUTH] Erro ao buscar perfil:', error)
+        console.log('[AUTH] Tentando criar perfil...')
+        
         const { error: upsertError } = await supabase
           .from('profiles')
           .upsert({
@@ -61,12 +67,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }, { onConflict: 'id' })
 
         if (upsertError) {
-          console.error('Erro ao criar perfil:', upsertError)
+          console.error('[AUTH] Erro ao criar perfil:', upsertError)
+        } else {
+          console.log('[AUTH] Perfil criado com sucesso')
         }
 
         return defaultUser
       }
 
+      if (!profile) {
+        console.log('[AUTH] Perfil não encontrado, usando dados padrão')
+        return defaultUser
+      }
+
+      console.log('[AUTH] Perfil encontrado:', profile)
       return {
         id: profile.id,
         name: profile.name,
@@ -76,30 +90,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         generationsUsed: profile.generations_used || 0
       }
     } catch (err) {
-      console.error('Erro ao carregar perfil:', err)
-      return {
-        id: authUser.id,
-        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuário',
-        email: authUser.email || '',
-        plan: 'free',
-        createdAt: authUser.created_at,
-        generationsUsed: 0
-      }
+      console.error('[AUTH] Erro inesperado ao carregar perfil:', err)
+      return defaultUser
     }
   }, [])
 
   const refreshUser = useCallback(async () => {
     try {
+      console.log('[AUTH] refreshUser chamado')
       const { data: { session } } = await supabase.auth.getSession()
 
       if (session?.user) {
+        console.log('[AUTH] Sessão encontrada, carregando perfil...')
         const userProfile = await loadUserProfile(session.user)
         setUser(userProfile)
+        console.log('[AUTH] Usuário atualizado:', userProfile)
       } else {
+        console.log('[AUTH] Nenhuma sessão encontrada')
         setUser(null)
       }
     } catch (err) {
-      console.error('Erro ao atualizar usuário:', err)
+      console.error('[AUTH] Erro ao atualizar usuário:', err)
       setUser(null)
     }
   }, [loadUserProfile])
