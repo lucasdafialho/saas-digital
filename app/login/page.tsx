@@ -24,7 +24,6 @@ export default function LoginPage() {
 
   const { login } = useAuth()
   const router = useRouter()
-  const { token: csrfToken, loading: csrfLoading } = useCSRF()
 
   useEffect(() => {
     setIsLoading(false)
@@ -57,16 +56,22 @@ export default function LoginPage() {
     }
 
     try {
+      console.log('[LOGIN PAGE] Iniciando login...')
+      
       // Faz o login diretamente
       await login(email, password)
       
-      // Aguarda um pouco para garantir que a sessão foi criada
-      await new Promise(resolve => setTimeout(resolve, 500))
+      console.log('[LOGIN PAGE] Login concluído, aguardando...')
       
-      // Redireciona para o dashboard
-      router.push("/dashboard")
+      // Aguarda um pouco para garantir que a sessão foi criada
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      console.log('[LOGIN PAGE] Redirecionando para dashboard...')
+      
+      // Força reload da página para garantir que o middleware pegue a sessão
+      window.location.href = '/dashboard'
     } catch (err) {
-      console.error('Erro no login:', err)
+      console.error('[LOGIN PAGE] Erro no login:', err)
       setError(getErrorMessage(err))
       setIsLoading(false)
     }
@@ -161,9 +166,9 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isLoading || csrfLoading}
+                disabled={isLoading}
               >
-                {isLoading ? "Entrando..." : csrfLoading ? "Carregando..." : "Entrar"}
+                {isLoading ? "Entrando..." : "Entrar"}
               </Button>
             </form>
 
