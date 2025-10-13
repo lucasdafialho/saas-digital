@@ -32,10 +32,10 @@ export default function LandingPage() {
 
           <div className="flex items-center justify-end space-x-4">
             <Button variant="ghost" size="default" className="transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
-              <Link href="/login">Sign in</Link>
+              <Link href="/login">Entrar</Link>
             </Button>
             <Button size="default" className="transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
-              <Link href="/register">Get started</Link>
+              <Link href="/register">Começar</Link>
             </Button>
           </div>
         </div>
@@ -61,10 +61,10 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
             <Button size="lg" className="text-lg px-10 py-4 transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
-              <Link href="/register">Start free</Link>
+              <Link href="/register">Começar agora</Link>
             </Button>
             <Button variant="outline" size="lg" className="text-lg px-10 py-4 bg-transparent transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5">
-              View demo
+              Ver demonstração
             </Button>
           </div>
 
@@ -386,7 +386,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            <Card className="border-2 border-border transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40" data-animate>
+            <Card className="border-2 border-border transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl hover:border-primary/40 flex flex-col" data-animate>
               <CardHeader className="pb-6">
                 <CardTitle className="text-2xl mb-2">Starter</CardTitle>
                 <CardDescription className="text-base">Para empreendedores iniciantes</CardDescription>
@@ -394,11 +394,11 @@ export default function LandingPage() {
                   R$ 49,90<span className="text-lg font-normal text-muted-foreground">/mês</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <ul className="space-y-4">
+              <CardContent className="space-y-6 flex-1 flex flex-col">
+                <ul className="space-y-4 flex-1">
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span>100 copies IA por mês</span>
+                    <span>100 copys geradas por IA por mês</span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
@@ -413,13 +413,13 @@ export default function LandingPage() {
                     <span>Suporte por e-mail</span>
                   </li>
                 </ul>
-                <Button className="w-full bg-transparent transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" variant="outline" asChild>
-                  <Link href="/register">Start free</Link>
+                <Button className="w-full transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5 mt-auto" variant="outline" asChild>
+                  <Link href="/register">Começar agora</Link>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-primary relative transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl" data-animate>
+            <Card className="border-2 border-primary relative transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.03] hover:shadow-2xl flex flex-col" data-animate>
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-primary text-primary-foreground px-4 py-1">Mais Popular</Badge>
               </div>
@@ -430,11 +430,11 @@ export default function LandingPage() {
                   R$ 149,90<span className="text-lg font-normal text-muted-foreground">/mês</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <ul className="space-y-4">
+              <CardContent className="space-y-6 flex-1 flex flex-col">
+                <ul className="space-y-4 flex-1">
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span>Copies IA ilimitadas</span>
+                    <span>Geração ilimitada de copys por IA</span>
                   </li>
                   <li className="flex items-center space-x-3">
                     <CheckCircle className="w-5 h-5 text-primary flex-shrink-0" />
@@ -453,8 +453,8 @@ export default function LandingPage() {
                     <span>Templates exclusivos</span>
                   </li>
                 </ul>
-                <Button className="w-full transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
-                  <Link href="/register">Get started</Link>
+                <Button className="w-full transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5 mt-auto" asChild>
+                  <Link href="/register">Começar agora</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -470,14 +470,14 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Button size="lg" variant="secondary" className="text-lg px-10 py-4 transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5" asChild>
-              <Link href="/register">Start free</Link>
+              <Link href="/register">Começar agora</Link>
             </Button>
             <Button
               size="lg"
               variant="outline"
               className="text-lg px-10 py-4 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent transition-transform duration-200 hover:scale-105 hover:-translate-y-0.5"
             >
-              View demo
+              Ver demonstração
             </Button>
           </div>
         </div>
@@ -485,7 +485,7 @@ export default function LandingPage() {
 
       <footer className="py-16 px-6 border-t bg-muted/10">
         <div className="container mx-auto">
-          <div className="grid md:grid-cols-4 gap-12">
+          <div className="grid md:grid-cols-3 gap-12">
             <div>
               <div className="flex items-center space-x-3 mb-6">
               <div className="w-10 h-10 rounded-sm flex items-center justify-center">
@@ -493,83 +493,66 @@ export default function LandingPage() {
               </div>
               <span className="text-2xl font-bold tracking-tight">Konvexy</span>
               </div>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed mb-6">
                 Plataforma completa de marketing digital para empreendedores que querem vender mais.
               </p>
+              <div className="flex flex-col space-y-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/register">Começar agora</Link>
+                </Button>
+              </div>
             </div>
 
             <div>
               <h4 className="font-semibold mb-6 text-lg">Plataforma</h4>
               <ul className="space-y-3 text-muted-foreground">
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Gerador de Copy IA
+                  <a href="#platform" className="hover:text-foreground transition-colors">
+                    Funcionalidades
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Produtos Nichados
+                  <a href="#pricing" className="hover:text-foreground transition-colors">
+                    Planos e Preços
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Analytics
-                  </a>
+                  <Link href="/login" className="hover:text-foreground transition-colors">
+                    Entrar
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Documentação
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-6 text-lg">Empresa</h4>
-              <ul className="space-y-3 text-muted-foreground">
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Sobre Nós
-                  </a>
-                </li>
-                
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Segurança
-                  </a>
+                  <Link href="/register" className="hover:text-foreground transition-colors">
+                    Criar conta
+                  </Link>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-semibold mb-6 text-lg">Suporte</h4>
+              <h4 className="font-semibold mb-6 text-lg">Legal</h4>
               <ul className="space-y-3 text-muted-foreground">
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Central de Ajuda
-                  </a>
+                  <Link href="/legal/termos" className="hover:text-foreground transition-colors">
+                    Termos de Uso
+                  </Link>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Contato
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
-                    Status do Sistema
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition-colors">
+                  <Link href="/legal/privacidade" className="hover:text-foreground transition-colors">
                     Política de Privacidade
-                  </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/legal/reembolso" className="hover:text-foreground transition-colors">
+                    Política de Reembolso
+                  </Link>
                 </li>
               </ul>
             </div>
           </div>
 
           <div className="border-t mt-12 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Konvexy. Todos os direitos reservados. Plataforma de marketing digital.</p>
+            <p>&copy; 2025 Konvexy. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

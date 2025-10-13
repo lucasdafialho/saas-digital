@@ -98,3 +98,18 @@ export function DialogFooter({
     </div>
   )
 }
+
+export function DialogTrigger({ 
+  children,
+  asChild,
+  ...props
+}: { 
+  children: React.ReactNode
+  asChild?: boolean
+  [key: string]: any
+}) {
+  if (asChild && React.isValidElement(children)) {
+    return React.cloneElement(children, props)
+  }
+  return <div {...props}>{children}</div>
+}

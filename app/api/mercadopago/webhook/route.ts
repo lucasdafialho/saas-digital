@@ -591,7 +591,7 @@ export async function POST(request: NextRequest) {
             paymentStatus: payment.status
           })
         }
-        
+
       } catch (paymentError) {
         secureLogger.error("❌ Erro ao processar pagamento", {
           error: paymentError instanceof Error ? paymentError.message : 'Unknown',
@@ -618,8 +618,8 @@ export async function POST(request: NextRequest) {
         type: body.type,
         action: body.action
       })
-      
-      return NextResponse.json({ 
+
+      return NextResponse.json({
         received: true,
         status: "webhook_type_not_processed"
       })

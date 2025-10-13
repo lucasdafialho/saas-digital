@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone, CreditCard } from "lucide-react"
+import { Sparkles, LayoutDashboard, Zap, Target, BarChart3, Settings, LogOut, Menu, X, Wand2, ChevronDown, Layers3, Megaphone, CreditCard, BookOpen, FileText } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
@@ -24,6 +24,8 @@ type NavEntry =
 
 const navigation: NavEntry[] = [
   { type: "item", name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { type: "item", name: "Guia Rápido", href: "/guia-rapido", icon: BookOpen },
+  { type: "item", name: "Templates", href: "/dashboard/templates", icon: FileText },
   {
     type: "group",
     name: "IA Konvexy",
