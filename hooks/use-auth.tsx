@@ -222,10 +222,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data.session?.user) {
-      console.log('[AUTH] Login bem-sucedido, carregando perfil...')
+      console.log('[AUTH] Login bem-sucedido!')
+      console.log('[AUTH] Sessão:', data.session)
+      console.log('[AUTH] Usuário:', data.session.user)
+      console.log('[AUTH] Carregando perfil...')
+      
       const userProfile = await loadUserProfile(data.session.user)
+      console.log('[AUTH] Perfil carregado:', userProfile)
+      
       setUser(userProfile)
-      console.log('[AUTH] Perfil carregado após login')
+      setIsLoading(false)
+      console.log('[AUTH] Estado atualizado, login completo!')
     }
   }, [loadUserProfile])
 

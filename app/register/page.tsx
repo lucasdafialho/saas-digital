@@ -108,8 +108,9 @@ export default function RegisterPage() {
         setShowEmailConfirmation(true)
         setIsLoading(false)
       } else {
-        // Login automático bem-sucedido, redirecionar
-        router.replace("/dashboard")
+        // Login automático bem-sucedido, aguardar e redirecionar
+        await new Promise(resolve => setTimeout(resolve, 500))
+        router.push("/dashboard")
       }
     } catch (err) {
       console.error('Erro no registro:', err)

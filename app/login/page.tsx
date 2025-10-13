@@ -57,38 +57,14 @@ export default function LoginPage() {
     }
 
     try {
-      // Verifica se o token CSRF está disponível
-      if (!csrfToken) {
-        setError("Erro ao carregar página. Recarregue e tente novamente.")
-        setIsLoading(false)
-        return
-      }
-
-      // Verifica rate limit
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify({ email, password })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          setError(`Muitas tentativas de login. Aguarde ${data.retryAfter || 60} segundos.`)
-        } else {
-          setError(getErrorMessage(data.error || 'Erro ao fazer login'))
-        }
-        setIsLoading(false)
-        return
-      }
-
-      // Faz o login
+      // Faz o login diretamente
       await login(email, password)
-      router.replace("/dashboard")
+      
+      // Aguarda um pouco para garantir que a sessão foi criada
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Redireciona para o dashboard
+      router.push("/dashboard")
     } catch (err) {
       console.error('Erro no login:', err)
       setError(getErrorMessage(err))
