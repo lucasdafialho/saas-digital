@@ -21,8 +21,19 @@ export async function POST(request: NextRequest) {
   let webhookId = ''
 
   try {
-    // Parse do body
-    const body = await request.json()
+    // Parse resiliente do corpo (alguns envios vêm com content-type incorreto)
+    let body: any
+    const contentType = request.headers.get('content-type') || ''
+    try {
+      if (contentType.includes('application/json')) {
+        body = await request.json()
+      } else {
+        const text = await request.text()
+        body = text ? JSON.parse(text) : {}
+      }
+    } catch {
+      body = {}
+    }
 
     // Log detalhado do webhook recebido
     secureLogger.info("🔔 Webhook MercadoPago recebido", {
@@ -66,8 +77,8 @@ export async function POST(request: NextRequest) {
     }
 
     const headers = {
-      'x-signature': request.headers.get('x-signature'),
-      'x-request-id': request.headers.get('x-request-id')
+      'x-signature': request.headers.get('x-signature') || request.headers.get('X-Signature') || undefined,
+      'x-request-id': request.headers.get('x-request-id') || request.headers.get('X-Request-Id') || undefined,
     }
 
     // Log detalhado dos headers recebidos (incluindo valores parciais)
@@ -100,9 +111,11 @@ export async function POST(request: NextRequest) {
 
     secureLogger.info('✅ Webhook validado com sucesso!')
 
-    // Usar apenas o ID do Mercado Pago para evitar duplicação
-    // O ID do webhook é único por evento, não por tentativa de entrega
-    webhookId = `mp_${body.id}`
+    // Gerar um identificador consistente e sempre presente
+    // Preferência: body.id (id do evento) -> fallback para combinação (type:data.id:ts)
+    const tsHeader = (headers['x-signature'] || '').split(',').find(p => p.trim().startsWith('ts='))
+    const ts = tsHeader ? tsHeader.split('=')[1] : ''
+    webhookId = body.id ? `mp_${body.id}` : `mp_${body.type}_${body.data.id}_${ts}`
 
     // Verificar se já foi processado (no banco de dados)
     const { data: existingWebhook } = await supabaseAdmin
