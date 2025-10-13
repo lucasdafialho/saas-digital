@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { getErrorMessage, isValidEmail, isValidPassword, isValidName, getPasswordRequirements, getPasswordStrength, getPasswordErrorMessage } from "@/lib/error-messages"
 import { EmailConfirmationModal } from "@/components/email-confirmation-modal"
 import { useCSRF } from "@/hooks/use-csrf"
+import { GoogleAuthButton } from "@/components/auth/google-auth-button"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -133,6 +134,17 @@ export default function RegisterPage() {
             <CardDescription>Comece sua jornada no marketing digital</CardDescription>
           </CardHeader>
           <CardContent>
+            <GoogleAuthButton mode="signup" className="w-full" />
+            
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">Ou continue com email</span>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="p-4 text-sm text-destructive-foreground bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
