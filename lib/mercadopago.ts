@@ -86,10 +86,9 @@ export class MercadoPagoService {
   }
 
   validateWebhookSignature(headers: any, body: any): boolean {
-    // Log detalhado do webhook secret (primeiros 10 caracteres apenas)
+    // Log detalhado do webhook secret
     secureLogger.info('🔍 Validando webhook signature', {
-      hasSecret: !!this.webhookSecret,
-      secretPreview: this.webhookSecret ? this.webhookSecret.substring(0, 10) + '...' : 'NOT_SET',
+      secretConfigured: !!this.webhookSecret,
       environment: process.env.VERCEL ? 'vercel' : 'local',
       nodeEnv: process.env.NODE_ENV
     })

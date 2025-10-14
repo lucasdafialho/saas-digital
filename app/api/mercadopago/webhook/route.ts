@@ -88,10 +88,7 @@ export async function POST(request: NextRequest) {
       signaturePreview: headers['x-signature'] ? headers['x-signature'].substring(0, 30) + '...' : 'NOT_SET',
       requestId: headers['x-request-id'],
       allHeaderKeys: Array.from(request.headers.keys()),
-      hasSecret: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
-      secretPreview: process.env.MERCADOPAGO_WEBHOOK_SECRET
-        ? process.env.MERCADOPAGO_WEBHOOK_SECRET.substring(0, 10) + '...'
-        : 'NOT_SET'
+      secretConfigured: !!process.env.MERCADOPAGO_WEBHOOK_SECRET
     })
 
     const isValid = mpService.validateWebhookSignature(headers, body)
@@ -138,21 +135,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Registrar webhook no banco (marca como em processamento)
-    // Usar UPSERT para evitar race condition se dois webhooks chegarem simultaneamente
+    // Usar INSERT para evitar race condition - se já existe, capturar erro
     const { error: insertError } = await supabaseAdmin
       .from('webhook_events')
-      .upsert({
+      .insert({
         webhook_id: webhookId,
         event_type: body.type,
         payment_id: body.data.id,
         status: 'processing',
         raw_data: body
-      }, {
-        onConflict: 'webhook_id',
-        ignoreDuplicates: false // Permitir que retorne dados mesmo se já existe
       })
       .select()
-      .single()
+      .maybeSingle()
 
     // Se falhou ao inserir por duplicação, significa que outro processo já está processando
     if (insertError) {
@@ -290,6 +284,15 @@ export async function POST(request: NextRequest) {
               planType = "pro"
             } else if (amount >= 1.0 - 0.5 && amount <= 1.0 + 0.5) {
               planType = "starter"
+            } else {
+              // Valor não reconhecido - usar starter como padrão mas logar warning
+              secureLogger.warn("⚠️ ATENÇÃO: Valor de pagamento não corresponde a nenhum plano conhecido", {
+                amount: payment.transaction_amount,
+                paymentId: payment.id,
+                email: userEmail,
+                fallbackPlan: "starter"
+              })
+              planType = "starter"
             }
           }
 
@@ -342,12 +345,13 @@ export async function POST(request: NextRequest) {
           let subscriptionResult
 
           try {
-            // Primeiro, buscar subscription ativa existente
+            // Primeiro, buscar subscription ativa existente (e não expirada)
             const { data: existingActiveSub } = await supabaseAdmin
               .from('subscriptions')
-              .select('id')
+              .select('id, expires_at')
               .eq('user_id', profile.id)
               .eq('status', 'active')
+              .gt('expires_at', now.toISOString()) // Apenas subscriptions não expiradas
               .maybeSingle()
 
             let upserted
