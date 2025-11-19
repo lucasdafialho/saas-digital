@@ -14,9 +14,8 @@ export interface MercadoPagoPreapprovalPlan {
   status?: string
 }
 
-export interface MercadoPagoSubscription {
-  id?: string
-  preapproval_plan_id: string
+export interface MercadoPagoSubscriptionCreate {
+  preapproval_plan_id?: string
   reason: string
   auto_recurring: {
     frequency: number
@@ -26,6 +25,23 @@ export interface MercadoPagoSubscription {
   }
   back_url: string
   payer_email?: string
+  external_reference?: string
+  status?: string
+}
+
+export interface MercadoPagoSubscription {
+  id?: string
+  preapproval_plan_id?: string
+  reason?: string
+  auto_recurring?: {
+    frequency: number
+    frequency_type: "days" | "months"
+    transaction_amount: number
+    currency_id: "BRL"
+  }
+  back_url?: string
+  payer_email?: string
+  external_reference?: string
   status?: string
   init_point?: string
 }
@@ -286,7 +302,7 @@ export class MercadoPagoService {
     return response.json()
   }
 
-  async createSubscription(subscription: MercadoPagoSubscription): Promise<MercadoPagoSubscription> {
+  async createSubscription(subscription: MercadoPagoSubscriptionCreate): Promise<MercadoPagoSubscription> {
     const response = await fetch(MERCADOPAGO_SUBSCRIPTION_API, {
       method: "POST",
       headers: {

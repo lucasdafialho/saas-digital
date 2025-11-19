@@ -53,6 +53,11 @@ export async function POST(request: NextRequest) {
       },
       statement_descriptor: "KONVEXY",
       external_reference: `${planType}_${Date.now()}`,
+      metadata: {
+        plan_type: planType,
+        user_email: userEmail,
+        integration: "konvexy_saas",
+      },
     }
 
     const response = await fetch("https://api.mercadopago.com/checkout/preferences", {

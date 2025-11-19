@@ -37,6 +37,8 @@ export async function POST(request: NextRequest) {
       },
       back_url: backUrl,
       payer_email: userEmail,
+      external_reference: `subscription_${planType}_${userEmail}_${Date.now()}`,
+      status: "pending",
     }
 
     const response = await fetch("https://api.mercadopago.com/preapproval", {

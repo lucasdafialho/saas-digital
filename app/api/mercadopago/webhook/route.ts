@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
 
     // Gerar um identificador consistente e sempre presente
     // Preferência: body.id (id do evento) -> fallback para combinação (type:data.id:ts)
-    const tsHeader = (headers['x-signature'] || '').split(',').find(p => p.trim().startsWith('ts='))
+    const tsHeader = (headers['x-signature'] || '').split(',').find((p: string) => p.trim().startsWith('ts='))
     const ts = tsHeader ? tsHeader.split('=')[1] : ''
     webhookId = body.id ? `mp_${body.id}` : `mp_${body.type}_${body.data.id}_${ts}`
 
@@ -629,12 +629,236 @@ export async function POST(request: NextRequest) {
           details: paymentError instanceof Error ? paymentError.message : 'Unknown error'
         }, { status: 500 })
       }
+    }
+    // Processar webhooks de assinatura (preapproval)
+    else if (body.type === "subscription_preapproval" || body.type === "subscription_authorized_payment") {
+      const preapprovalId = body.data.id
+
+      secureLogger.info("📋 Processando webhook de assinatura", {
+        type: body.type,
+        action: body.action,
+        preapprovalId
+      })
+
+      try {
+        // Buscar detalhes da assinatura
+        const subscription = await mpService.getSubscription(preapprovalId.toString())
+
+        secureLogger.info("📋 Detalhes da assinatura obtidos", {
+          id: subscription.id,
+          status: subscription.status,
+          email: subscription.payer_email,
+          externalReference: subscription.external_reference
+        })
+
+        // Extrair informações do external_reference ou usar dados da assinatura
+        let planType = "starter"
+        const externalRef = subscription.external_reference
+
+        if (externalRef && externalRef.includes("subscription_")) {
+          const parts = externalRef.split("_")
+          if (parts.length >= 2 && ["starter", "pro"].includes(parts[1])) {
+            planType = parts[1]
+          }
+        }
+
+        const userEmail = subscription.payer_email
+        if (!userEmail) {
+          secureLogger.error("❌ Email do assinante não encontrado", {
+            preapprovalId,
+            subscription
+          })
+
+          await supabaseAdmin
+            .from('webhook_events')
+            .update({ status: 'failed' })
+            .eq('webhook_id', webhookId)
+
+          return NextResponse.json({
+            error: "Missing payer email"
+          }, { status: 400 })
+        }
+
+        // Processar ações da assinatura
+        if (body.action === "created" || subscription.status === "authorized") {
+          // Assinatura criada/autorizada - ativar plano
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('id, plan, email')
+            .eq('email', userEmail)
+            .single()
+
+          if (!profile) {
+            secureLogger.error("❌ Usuário não encontrado para assinatura", {
+              email: userEmail,
+              preapprovalId
+            })
+
+            await supabaseAdmin
+              .from('webhook_events')
+              .update({ status: 'failed' })
+              .eq('webhook_id', webhookId)
+
+            return NextResponse.json({
+              error: "User not found"
+            }, { status: 404 })
+          }
+
+          const now = new Date()
+          const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // 30 dias
+
+          // Criar/atualizar subscription
+          const { data: existingActiveSub } = await supabaseAdmin
+            .from('subscriptions')
+            .select('id')
+            .eq('user_id', profile.id)
+            .eq('status', 'active')
+            .gt('expires_at', now.toISOString())
+            .maybeSingle()
+
+          if (existingActiveSub) {
+            await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                plan_type: planType,
+                mercadopago_subscription_id: preapprovalId.toString(),
+                expires_at: expiresAt.toISOString(),
+                updated_at: now.toISOString()
+              })
+              .eq('id', existingActiveSub.id)
+          } else {
+            await supabaseAdmin
+              .from('subscriptions')
+              .insert({
+                user_id: profile.id,
+                plan_type: planType,
+                status: 'active',
+                mercadopago_subscription_id: preapprovalId.toString(),
+                started_at: now.toISOString(),
+                expires_at: expiresAt.toISOString(),
+                created_at: now.toISOString(),
+                updated_at: now.toISOString()
+              })
+          }
+
+          // Atualizar perfil
+          await supabaseAdmin
+            .from('profiles')
+            .update({
+              plan: planType,
+              subscription_status: 'active',
+              updated_at: now.toISOString()
+            })
+            .eq('id', profile.id)
+
+          secureLogger.info("✅ Assinatura processada com sucesso", {
+            userId: profile.id,
+            email: userEmail,
+            plan: planType,
+            preapprovalId
+          })
+
+          await supabaseAdmin
+            .from('webhook_events')
+            .update({ status: 'completed' })
+            .eq('webhook_id', webhookId)
+
+          return NextResponse.json({
+            received: true,
+            status: "subscription_activated",
+            preapprovalId
+          })
+        }
+        else if (body.action === "cancelled" || subscription.status === "cancelled") {
+          // Assinatura cancelada - desativar plano
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('email', userEmail)
+            .single()
+
+          if (profile) {
+            await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                status: 'cancelled',
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', profile.id)
+              .eq('mercadopago_subscription_id', preapprovalId.toString())
+
+            await supabaseAdmin
+              .from('profiles')
+              .update({
+                plan: 'free',
+                subscription_status: 'cancelled',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', profile.id)
+
+            secureLogger.info("✅ Assinatura cancelada processada", {
+              userId: profile.id,
+              email: userEmail,
+              preapprovalId
+            })
+          }
+
+          await supabaseAdmin
+            .from('webhook_events')
+            .update({ status: 'completed' })
+            .eq('webhook_id', webhookId)
+
+          return NextResponse.json({
+            received: true,
+            status: "subscription_cancelled"
+          })
+        }
+        else {
+          secureLogger.info("📨 Ação de assinatura não tratada", {
+            action: body.action,
+            status: subscription.status
+          })
+
+          await supabaseAdmin
+            .from('webhook_events')
+            .update({ status: 'completed' })
+            .eq('webhook_id', webhookId)
+
+          return NextResponse.json({
+            received: true,
+            status: "subscription_action_not_processed"
+          })
+        }
+
+      } catch (subscriptionError) {
+        secureLogger.error("❌ Erro ao processar assinatura", {
+          error: subscriptionError instanceof Error ? subscriptionError.message : 'Unknown',
+          preapprovalId,
+          webhookId
+        })
+
+        await supabaseAdmin
+          .from('webhook_events')
+          .update({ status: 'failed' })
+          .eq('webhook_id', webhookId)
+
+        return NextResponse.json({
+          error: "Subscription processing error",
+          details: subscriptionError instanceof Error ? subscriptionError.message : 'Unknown error'
+        }, { status: 500 })
+      }
     } else {
       // Log para outros tipos de webhook
       secureLogger.info("📨 Webhook de tipo não processado", {
         type: body.type,
         action: body.action
       })
+
+      // Marcar como completed mesmo assim (não queremos retry para tipos desconhecidos)
+      await supabaseAdmin
+        .from('webhook_events')
+        .update({ status: 'completed' })
+        .eq('webhook_id', webhookId)
 
       return NextResponse.json({
         received: true,
