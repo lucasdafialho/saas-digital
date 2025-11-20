@@ -93,20 +93,34 @@ export async function POST(request: NextRequest) {
 
     const isValid = mpService.validateWebhookSignature(headers, body)
 
-    if (!isValid) {
+    // MODO DEBUG: Permite webhooks em desenvolvimento sem validação
+    const debugMode = process.env.MERCADOPAGO_WEBHOOK_DEBUG === 'true'
+
+    if (!isValid && !debugMode) {
       secureLogger.security('🚫 Webhook rejeitado - assinatura inválida', {
         dataId: body.data?.id,
         type: body.type,
         hasSecret: !!process.env.MERCADOPAGO_WEBHOOK_SECRET,
         nodeEnv: process.env.NODE_ENV,
-        vercel: process.env.VERCEL
+        vercel: process.env.VERCEL,
+        debugMode
       })
       return NextResponse.json({
         error: "Invalid signature"
       }, { status: 401 })
     }
 
-    secureLogger.info('✅ Webhook validado com sucesso!')
+    if (debugMode && !isValid) {
+      secureLogger.warn('⚠️ MODO DEBUG ATIVO - Webhook sem assinatura válida aceito!', {
+        dataId: body.data?.id,
+        type: body.type
+      })
+    }
+
+    secureLogger.info('✅ Webhook validado com sucesso!', {
+      debugModeActive: debugMode,
+      signatureValid: isValid
+    })
 
     // Gerar um identificador consistente e sempre presente
     // Preferência: body.id (id do evento) -> fallback para combinação (type:data.id:ts)

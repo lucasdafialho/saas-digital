@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    
+
     const isLocalhost = appUrl.includes("localhost")
-    const backUrl = isLocalhost 
+    const backUrl = isLocalhost
       ? "https://konvexy.com/dashboard/planos?payment=success"
       : `${appUrl}/dashboard/planos?payment=success`
 
