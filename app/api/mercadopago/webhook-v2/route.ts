@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabaseAdmin } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase-admin"
 import { MercadoPagoService } from "@/lib/mercadopago"
 import { PaymentWebhookHandler, SubscriptionWebhookHandler } from "@/lib/services/webhook-handlers"
 import secureLogger from "@/lib/logger"
@@ -22,6 +22,14 @@ export async function POST(request: NextRequest) {
   let webhookId = ''
 
   try {
+    // 0. VERIFICAR SUPABASE
+    if (!supabaseAdmin) {
+      secureLogger.error(" Supabase Admin não configurado")
+      return NextResponse.json({
+        error: "Database connection error"
+      }, { status: 500 })
+    }
+
     // 1. PARSE DO CORPO
     const body = await parseRequestBody(request)
 

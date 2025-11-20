@@ -1,6 +1,6 @@
 import { MercadoPagoService, MercadoPagoPayment, MercadoPagoSubscription } from "@/lib/mercadopago"
 import { PaymentService } from "./payment-service"
-import { supabaseAdmin } from "@/lib/supabase"
+import { supabaseAdmin } from "@/lib/supabase-admin"
 import secureLogger from "@/lib/logger"
 
 export interface WebhookHandlerResult {
